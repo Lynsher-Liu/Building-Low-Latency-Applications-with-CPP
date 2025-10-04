@@ -1,7 +1,5 @@
 #!/bin/bash
 
-bash scripts/build.sh
-
 date
 
 echo "---------------------------------------------------------------------------------------------------------------------------------------------------------"
@@ -10,7 +8,7 @@ echo "--------------------------------------------------------------------------
 ./cmake-build-release/exchange_main 2>&1 &
 sleep 10
 
-bash ./scripts/run_clients.sh
+bash ./scripts/run_clients_xinyi.sh
 
 sleep 5
 
