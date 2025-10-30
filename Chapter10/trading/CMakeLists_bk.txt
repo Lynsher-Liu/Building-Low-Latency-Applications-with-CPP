@@ -1,0 +1,58 @@
+set(CMAKE_VERBOSE_MAKEFILE on)
+
+file(GLOB SOURCES "*/*.cpp")
+
+set(TRADING_HEADER_DIRS
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+  ${FOLLY_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIR}
+  ${OPENSSL_INCLUDE_DIR}
+  ${GFLAGS_INCLUDE_DIRS}
+  ${LIBEVENT_INCLUDE_DIR}
+  ${DOUBLE_CONVERSION_INCLUDE_DIRS}
+  log4cplus
+  json
+  concurrentqueue
+)
+
+include_directories(${TRADING_HEADER_DIRS})
+
+set(3rd_LIBS
+  ${FOLLY_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${GFLAGS_LIBRARIES}
+  ${LIBEVENT_LIB}
+  ${DOUBLE_CONVERSION_LIBRARIES}
+  ${CMAKE_DL_LIBS}
+  ${LIBRT_LIBRARIES}      
+  log4cplus
+)
+
+link_directories(
+    ${CMAKE_SOURCE_DIR}/installed/lib
+)
+
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/trading)
+
+add_library(libtrading STATIC ${SOURCES}) #strategy/risk_manager.cpp
+
+target_link_libraries(libtrading PUBLIC
+  ${GTEST_BOTH_LIBRARIES}
+  ${GMOCK_BOTH_LIBRARIES}
+  ${3rd_LIBS}
+  pthread
+  numa
+)
+
+install(
+  TARGETS libtrading
+  DESTINATION trading/${BIN_INSTALL_DIR}
+)
+
+# install(
+#    FILES 
+#      config/config.json
+#    DESTINATION trading/${CONFIG_INSTALL_DIR}
+# )

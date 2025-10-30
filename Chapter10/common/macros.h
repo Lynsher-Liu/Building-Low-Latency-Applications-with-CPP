@@ -4,7 +4,14 @@
 #include <iostream>
 
 /// Branch prediction hints.
+#ifdef LIKELY
+#undef LIKELY
+#endif
 #define LIKELY(x) __builtin_expect(!!(x), 1)
+
+#ifdef UNLIKELY  
+#undef UNLIKELY
+#endif
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 
 /// Check condition and exit if not true.

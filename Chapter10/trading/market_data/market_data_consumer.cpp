@@ -29,7 +29,26 @@ namespace Trading {
     while (run_) {
       incremental_mcast_socket_.sendAndRecv();
       snapshot_mcast_socket_.sendAndRecv();
+
+      testBoost();
     }
+  }
+
+  void MarketDataConsumer::testBoost()
+  {
+    boost::asio::io_service io_service;
+
+    auto work_guard = boost::asio::make_work_guard(io_service);
+    boost::asio::signal_set signals_(io_service, SIGINT, SIGTERM);
+   
+    signals_.async_wait([&](auto, auto) 
+    {
+      std::cout << "receive stop \n"; 
+      logger_.log("%:% %() %receive stop \n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_));
+      work_guard.reset(); 
+      io_service.stop();
+      return;
+    });
   }
 
   /// Start the process of snapshot synchronization by subscribing to the snapshot multicast stream.

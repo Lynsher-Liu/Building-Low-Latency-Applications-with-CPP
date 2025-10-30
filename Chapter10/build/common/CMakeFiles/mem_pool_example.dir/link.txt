@@ -1,0 +1,1 @@
+g++ -std=c++2a -Wall -Wextra -Werror -Wpedantic -g CMakeFiles/mem_pool_example.dir/mem_pool_example.cpp.o -o ../bin/mem_pool_example  ../lib/liblibcommon.a -lpthread 

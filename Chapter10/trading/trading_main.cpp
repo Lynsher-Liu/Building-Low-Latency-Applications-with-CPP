@@ -3,6 +3,7 @@
 #include "strategy/trade_engine.h"
 #include "order_gw/order_gateway.h"
 #include "market_data/market_data_consumer.h"
+#include "market_data/websocket.h"
 
 #include "common/logging.h"
 

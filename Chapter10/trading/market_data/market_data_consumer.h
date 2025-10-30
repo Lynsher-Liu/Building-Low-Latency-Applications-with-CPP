@@ -3,12 +3,34 @@
 #include <functional>
 #include <map>
 
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <json/json.hpp>
+
+#include "concurrentqueue/concurrentqueue.h"
+#include <folly/concurrency/ConcurrentHashMap.h>
+
 #include "common/thread_utils.h"
 #include "common/lf_queue.h"
 #include "common/macros.h"
 #include "common/mcast_socket.h"
 
 #include "exchange/market_data/market_update.h"
+
+using tcp = boost::asio::ip::tcp;
+namespace http = boost::beast::http;
+using namespace boost::placeholders;
 
 namespace Trading {
   class MarketDataConsumer {
@@ -44,6 +66,8 @@ namespace Trading {
     MarketDataConsumer &operator=(const MarketDataConsumer &) = delete;
 
     MarketDataConsumer &operator=(const MarketDataConsumer &&) = delete;
+
+    void testBoost();
 
   private:
     /// Track the next expected sequence number on the incremental market data stream, used to detect gaps / drops.

@@ -1,0 +1,38 @@
+******* websocket for OKX mock trading *******
+
+1. login
+
+request:
+
+{
+ "op": "login",
+ "args":
+  [
+     {
+       "apiKey": "******",
+       "passphrase": "******",
+       "timestamp": "1538054050",
+       "sign": "7L+zFQ+CEgGu5rzCj4+BdV2/uUHGqddA9pI6ztsRRPs=" 
+      }
+   ]
+}
+
+response:
+
+{
+  "event": "login",
+  "code": "0",
+  "msg": "",
+  "connId": "a4d3ae55"
+}
+
+{
+  "event": "error",
+  "code": "60009",
+  "msg": "Login failed.",
+  "connId": "a4d3ae55"
+}
+
+
+
+
