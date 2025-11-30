@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "../lib/liblibtrading.pdb"
   "CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o"
   "CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o.d"
+  "CMakeFiles/libtrading.dir/market_data/websocket.cpp.o"
+  "CMakeFiles/libtrading.dir/market_data/websocket.cpp.o.d"
   "CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o"
   "CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o.d"
   "CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o"

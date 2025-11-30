@@ -14,41 +14,46 @@ using json = nlohmann::json;
 
 namespace Common 
 {
-	constexpr size_t ME_MAX_TICKERS = 8;
-
-
 	/// Type of trading algorithm.
-	enum class WsOpType : int8_t {
-		SUBSCRIBE = 0,
-		UNSUBSCRIBE = 1
+	enum class WsTopicStatus : int8_t {
+		PENDING = 0,
+		OK = 1,		
+		ERROR = 2
 	};
 
-	inline auto wsOpTypeToString(WsOpType type) -> std::string {
-		switch (type) {
-		case WsOpType::SUBSCRIBE:
-			return "subscribe";
-		case WsOpType::UNSUBSCRIBE:
-			return "unsubscribe";
-		}
+	//NOTICE = 2, //TODO: 用户会在如下场景收到此类信息：Websocket服务升级断线
+				//在推送服务升级前60秒会推送信息，告知用户WebSocket服务即将升级。用户可以重新建立新的连接避免由于断线造成的影响。
 
+	inline auto WsTopicStatusToString(WsTopicStatus type) -> std::string 
+	{
+		switch (type) 
+		{
+			case WsTopicStatus::PENDING:
+				return "PENDING";
+			case WsTopicStatus::OK:
+				return "OK";
+			case WsTopicStatus::ERROR:
+				return "ERROR";
+		}
 		return "UNKNOWN";
 	}
 
 	/// Risk configuration containing limits on risk parameters for the RiskManager.
 	struct WsTopic 
-	{
-		WsOpType m_opType;
+	{		
 		std::string m_channel;
 		std::string m_instId;
+		WsTopicStatus m_status{WsTopicStatus::PENDING};
 
-		auto toString() const {
+		auto toSubscribeStr() const 
+		{
 			json topicJson;
-			std::stringstream ss;
+			//std::stringstream ss;
 
 			// demo
 			//send(R"({"op":"subscribe","args":[{"channel":"books5","instId":"BTC-USDT-SWAP"}]})");
 
-			topicJson["op"] = wsOpTypeToString(m_opType);
+			topicJson["op"] = "subscribe";
 			json arg;
 			arg["channel"] = m_channel;
 			arg["instId"] = m_instId;
@@ -70,3 +75,4 @@ namespace Common
 	 */
 
 }
+

@@ -232,6 +232,30 @@ market_data/market_data_consumer.cpp.s:
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build && $(MAKE) $(MAKESILENT) -f trading/CMakeFiles/libtrading.dir/build.make trading/CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.s
 .PHONY : market_data/market_data_consumer.cpp.s
 
+market_data/websocket.o: market_data/websocket.cpp.o
+.PHONY : market_data/websocket.o
+
+# target to build an object file
+market_data/websocket.cpp.o:
+	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build && $(MAKE) $(MAKESILENT) -f trading/CMakeFiles/libtrading.dir/build.make trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o
+.PHONY : market_data/websocket.cpp.o
+
+market_data/websocket.i: market_data/websocket.cpp.i
+.PHONY : market_data/websocket.i
+
+# target to preprocess a source file
+market_data/websocket.cpp.i:
+	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build && $(MAKE) $(MAKESILENT) -f trading/CMakeFiles/libtrading.dir/build.make trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.i
+.PHONY : market_data/websocket.cpp.i
+
+market_data/websocket.s: market_data/websocket.cpp.s
+.PHONY : market_data/websocket.s
+
+# target to generate assembly for a file
+market_data/websocket.cpp.s:
+	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build && $(MAKE) $(MAKESILENT) -f trading/CMakeFiles/libtrading.dir/build.make trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.s
+.PHONY : market_data/websocket.cpp.s
+
 order_gw/order_gateway.o: order_gw/order_gateway.cpp.o
 .PHONY : order_gw/order_gateway.o
 
@@ -443,6 +467,9 @@ help:
 	@echo "... market_data/market_data_consumer.o"
 	@echo "... market_data/market_data_consumer.i"
 	@echo "... market_data/market_data_consumer.s"
+	@echo "... market_data/websocket.o"
+	@echo "... market_data/websocket.i"
+	@echo "... market_data/websocket.s"
 	@echo "... order_gw/order_gateway.o"
 	@echo "... order_gw/order_gateway.i"
 	@echo "... order_gw/order_gateway.s"

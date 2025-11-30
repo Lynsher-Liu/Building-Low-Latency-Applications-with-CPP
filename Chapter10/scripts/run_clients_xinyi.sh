@@ -25,7 +25,4 @@
 # sleep 5
 
 
-./cmake-build-release/trading_main  5 RANDOM &
-sleep 5
-
-wait
+../installed/bin/trading_main  5 RANDOM &

@@ -146,12 +146,12 @@ CMakeFiles/trading_main.dir/all: exchange/CMakeFiles/libexchange.dir/all
 CMakeFiles/trading_main.dir/all: trading/CMakeFiles/libtrading.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/trading_main.dir/build.make CMakeFiles/trading_main.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/trading_main.dir/build.make CMakeFiles/trading_main.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=37,38 "Built target trading_main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=38,39 "Built target trading_main"
 .PHONY : CMakeFiles/trading_main.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/trading_main.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles 28
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles 29
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/trading_main.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles 0
 .PHONY : CMakeFiles/trading_main.dir/rule
@@ -198,7 +198,7 @@ common/CMakeFiles/libcommon.dir/clean:
 common/CMakeFiles/thread_example.dir/all: common/CMakeFiles/libcommon.dir/all
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/thread_example.dir/build.make common/CMakeFiles/thread_example.dir/depend
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/thread_example.dir/build.make common/CMakeFiles/thread_example.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=35,36 "Built target thread_example"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=36,37 "Built target thread_example"
 .PHONY : common/CMakeFiles/thread_example.dir/all
 
 # Build rule for subdir invocation for target.
@@ -224,7 +224,7 @@ common/CMakeFiles/thread_example.dir/clean:
 common/CMakeFiles/mem_pool_example.dir/all: common/CMakeFiles/libcommon.dir/all
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/mem_pool_example.dir/build.make common/CMakeFiles/mem_pool_example.dir/depend
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/mem_pool_example.dir/build.make common/CMakeFiles/mem_pool_example.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=31,32 "Built target mem_pool_example"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=32,33 "Built target mem_pool_example"
 .PHONY : common/CMakeFiles/mem_pool_example.dir/all
 
 # Build rule for subdir invocation for target.
@@ -276,7 +276,7 @@ common/CMakeFiles/lf_queue_example.dir/clean:
 common/CMakeFiles/logging_example.dir/all: common/CMakeFiles/libcommon.dir/all
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/logging_example.dir/build.make common/CMakeFiles/logging_example.dir/depend
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/logging_example.dir/build.make common/CMakeFiles/logging_example.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=29,30 "Built target logging_example"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=30,31 "Built target logging_example"
 .PHONY : common/CMakeFiles/logging_example.dir/all
 
 # Build rule for subdir invocation for target.
@@ -302,7 +302,7 @@ common/CMakeFiles/logging_example.dir/clean:
 common/CMakeFiles/socket_example.dir/all: common/CMakeFiles/libcommon.dir/all
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/socket_example.dir/build.make common/CMakeFiles/socket_example.dir/depend
 	$(MAKE) $(MAKESILENT) -f common/CMakeFiles/socket_example.dir/build.make common/CMakeFiles/socket_example.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=33,34 "Built target socket_example"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=34,35 "Built target socket_example"
 .PHONY : common/CMakeFiles/socket_example.dir/all
 
 # Build rule for subdir invocation for target.
@@ -354,12 +354,12 @@ exchange/CMakeFiles/libexchange.dir/clean:
 trading/CMakeFiles/libtrading.dir/all:
 	$(MAKE) $(MAKESILENT) -f trading/CMakeFiles/libtrading.dir/build.make trading/CMakeFiles/libtrading.dir/depend
 	$(MAKE) $(MAKESILENT) -f trading/CMakeFiles/libtrading.dir/build.make trading/CMakeFiles/libtrading.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=19,20,21,22,23,24,25,26,27,28 "Built target libtrading"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=19,20,21,22,23,24,25,26,27,28,29 "Built target libtrading"
 .PHONY : trading/CMakeFiles/libtrading.dir/all
 
 # Build rule for subdir invocation for target.
 trading/CMakeFiles/libtrading.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles 10
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles 11
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 trading/CMakeFiles/libtrading.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles 0
 .PHONY : trading/CMakeFiles/libtrading.dir/rule

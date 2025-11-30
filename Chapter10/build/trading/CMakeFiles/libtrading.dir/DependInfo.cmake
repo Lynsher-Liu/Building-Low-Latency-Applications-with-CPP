@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/market_data/market_data_consumer.cpp" "trading/CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o" "gcc" "trading/CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o.d"
+  "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/market_data/websocket.cpp" "trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o" "gcc" "trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o.d"
   "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/order_gw/order_gateway.cpp" "trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o" "gcc" "trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o.d"
   "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/liquidity_taker.cpp" "trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o" "gcc" "trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o.d"
   "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/market_maker.cpp" "trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o" "gcc" "trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o.d"

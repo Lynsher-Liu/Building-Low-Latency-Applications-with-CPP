@@ -86,10 +86,24 @@ trading/CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.s: cmake_
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.s"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/market_data/market_data_consumer.cpp -o CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.s
 
+trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
+trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o: ../trading/market_data/websocket.cpp
+trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o"
+	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o -MF CMakeFiles/libtrading.dir/market_data/websocket.cpp.o.d -o CMakeFiles/libtrading.dir/market_data/websocket.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/market_data/websocket.cpp
+
+trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/libtrading.dir/market_data/websocket.cpp.i"
+	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/market_data/websocket.cpp > CMakeFiles/libtrading.dir/market_data/websocket.cpp.i
+
+trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/libtrading.dir/market_data/websocket.cpp.s"
+	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/market_data/websocket.cpp -o CMakeFiles/libtrading.dir/market_data/websocket.cpp.s
+
 trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o: ../trading/order_gw/order_gateway.cpp
 trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o -MF CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o.d -o CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/order_gw/order_gateway.cpp
 
 trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.i: cmake_force
@@ -103,7 +117,7 @@ trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o: ../trading/strategy/liquidity_taker.cpp
 trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o -MF CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/liquidity_taker.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.i: cmake_force
@@ -117,7 +131,7 @@ trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o: ../trading/strategy/market_maker.cpp
 trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o -MF CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/market_maker.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.i: cmake_force
@@ -131,7 +145,7 @@ trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.o: ../trading/strategy/market_order.cpp
 trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.o -MF CMakeFiles/libtrading.dir/strategy/market_order.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/market_order.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/market_order.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.i: cmake_force
@@ -145,7 +159,7 @@ trading/CMakeFiles/libtrading.dir/strategy/market_order.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o: ../trading/strategy/market_order_book.cpp
 trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o -MF CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/market_order_book.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.i: cmake_force
@@ -159,7 +173,7 @@ trading/CMakeFiles/libtrading.dir/strategy/market_order_book.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o: ../trading/strategy/order_manager.cpp
 trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o -MF CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/order_manager.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/order_manager.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.i: cmake_force
@@ -173,7 +187,7 @@ trading/CMakeFiles/libtrading.dir/strategy/order_manager.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o: ../trading/strategy/risk_manager.cpp
 trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o -MF CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/risk_manager.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.i: cmake_force
@@ -187,7 +201,7 @@ trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp.s: cmake_force
 trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o: trading/CMakeFiles/libtrading.dir/flags.make
 trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o: ../trading/strategy/trade_engine.cpp
 trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o: trading/CMakeFiles/libtrading.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o -MF CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o.d -o CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o -c /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/trading/strategy/trade_engine.cpp
 
 trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.i: cmake_force
@@ -201,6 +215,7 @@ trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.s: cmake_force
 # Object files for target libtrading
 libtrading_OBJECTS = \
 "CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o" \
+"CMakeFiles/libtrading.dir/market_data/websocket.cpp.o" \
 "CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o" \
 "CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o" \
 "CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o" \
@@ -214,6 +229,7 @@ libtrading_OBJECTS = \
 libtrading_EXTERNAL_OBJECTS =
 
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o
+lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/order_gw/order_gateway.cpp.o
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/strategy/liquidity_taker.cpp.o
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/strategy/market_maker.cpp.o
@@ -224,7 +240,7 @@ lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/strategy/risk_manager.cpp
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/strategy/trade_engine.cpp.o
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/build.make
 lib/liblibtrading.a: trading/CMakeFiles/libtrading.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX static library ../lib/liblibtrading.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX static library ../lib/liblibtrading.a"
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && $(CMAKE_COMMAND) -P CMakeFiles/libtrading.dir/cmake_clean_target.cmake
 	cd /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/trading && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/libtrading.dir/link.txt --verbose=$(VERBOSE)
 

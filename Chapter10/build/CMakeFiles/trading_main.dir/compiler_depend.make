@@ -1995,6 +1995,30 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
   ../installed/include/boost/beast/http/write.hpp \
   ../installed/include/boost/beast/http/impl/write.hpp \
   ../installed/include/boost/beast/version.hpp \
+  ../installed/include/json/json.hpp \
+  /usr/include/c++/13/forward_list \
+  /usr/include/c++/13/bits/forward_list.h \
+  /usr/include/c++/13/bits/forward_list.tcc \
+  /usr/include/c++/13/valarray \
+  /usr/include/c++/13/bits/valarray_array.h \
+  /usr/include/c++/13/bits/valarray_array.tcc \
+  /usr/include/c++/13/bits/valarray_before.h \
+  /usr/include/c++/13/bits/slice_array.h \
+  /usr/include/c++/13/bits/valarray_after.h \
+  /usr/include/c++/13/bits/gslice.h \
+  /usr/include/c++/13/bits/gslice_array.h \
+  /usr/include/c++/13/bits/mask_array.h \
+  /usr/include/c++/13/bits/indirect_array.h \
+  /usr/include/c++/13/filesystem \
+  /usr/include/c++/13/bits/fs_fwd.h \
+  /usr/include/c++/13/bits/fs_path.h \
+  /usr/include/c++/13/codecvt \
+  /usr/include/c++/13/bits/fs_dir.h \
+  /usr/include/c++/13/bits/fs_ops.h \
+  /usr/include/c++/13/ranges \
+  /usr/include/c++/13/numeric \
+  /usr/include/c++/13/bits/stl_numeric.h \
+  /usr/include/c++/13/pstl/glue_numeric_defs.h \
   ../installed/include/concurrentqueue/concurrentqueue.h \
   ../installed/include/folly/concurrency/ConcurrentHashMap.h \
   ../installed/include/folly/Optional.h \
@@ -2240,8 +2264,138 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
   /usr/include/c++/13/bits/stl_deque.h \
   /usr/include/c++/13/bits/deque.tcc \
   /usr/include/c++/13/bits/stl_stack.h \
-  ../common/mcast_socket.h
+  ../common/mcast_socket.h \
+  ../trading/market_data/websocket.h \
+  ../trading/market_data/ws_struct.h \
+  ../installed/include/boost/beast/websocket.hpp \
+  ../installed/include/boost/beast/websocket/error.hpp \
+  ../installed/include/boost/beast/websocket/impl/error.hpp \
+  ../installed/include/boost/beast/websocket/impl/error.ipp \
+  ../installed/include/boost/beast/websocket/option.hpp \
+  ../installed/include/boost/beast/websocket/rfc6455.hpp \
+  ../installed/include/boost/beast/websocket/impl/rfc6455.hpp \
+  ../installed/include/boost/beast/websocket/stream.hpp \
+  ../installed/include/boost/beast/websocket/stream_base.hpp \
+  ../installed/include/boost/beast/websocket/detail/decorator.hpp \
+  ../installed/include/boost/beast/websocket/stream_fwd.hpp \
+  ../installed/include/boost/beast/websocket/detail/hybi13.hpp \
+  ../installed/include/boost/beast/core/detail/base64.hpp \
+  ../installed/include/boost/beast/core/detail/base64.ipp \
+  ../installed/include/boost/beast/websocket/detail/hybi13.ipp \
+  ../installed/include/boost/beast/core/detail/sha1.hpp \
+  ../installed/include/boost/beast/core/detail/sha1.ipp \
+  ../installed/include/boost/beast/websocket/detail/prng.hpp \
+  /usr/include/c++/13/random \
+  /usr/include/c++/13/bits/random.h \
+  /usr/include/x86_64-linux-gnu/c++/13/bits/opt_random.h \
+  /usr/include/c++/13/bits/random.tcc \
+  ../installed/include/boost/beast/websocket/detail/prng.ipp \
+  ../installed/include/boost/beast/core/detail/chacha.hpp \
+  ../installed/include/boost/beast/core/detail/pcg.hpp \
+  ../installed/include/boost/beast/websocket/detail/impl_base.hpp \
+  ../installed/include/boost/beast/websocket/detail/frame.hpp \
+  ../installed/include/boost/beast/websocket/detail/utf8_checker.hpp \
+  ../installed/include/boost/beast/websocket/detail/utf8_checker.ipp \
+  ../installed/include/boost/endian/conversion.hpp \
+  ../installed/include/boost/endian/detail/requires_cxx11.hpp \
+  ../installed/include/boost/endian/detail/endian_reverse.hpp \
+  ../installed/include/boost/endian/detail/integral_by_size.hpp \
+  ../installed/include/boost/endian/detail/intrinsic.hpp \
+  ../installed/include/boost/endian/detail/is_scoped_enum.hpp \
+  ../installed/include/boost/endian/detail/endian_load.hpp \
+  ../installed/include/boost/endian/detail/order.hpp \
+  ../installed/include/boost/core/scoped_enum.hpp \
+  ../installed/include/boost/endian/detail/is_trivially_copyable.hpp \
+  ../installed/include/boost/endian/detail/endian_store.hpp \
+  ../installed/include/boost/beast/websocket/detail/pmd_extension.hpp \
+  ../installed/include/boost/beast/websocket/detail/pmd_extension.ipp \
+  ../installed/include/boost/beast/zlib/deflate_stream.hpp \
+  ../installed/include/boost/beast/zlib/error.hpp \
+  ../installed/include/boost/beast/zlib/impl/error.hpp \
+  ../installed/include/boost/beast/zlib/impl/error.ipp \
+  ../installed/include/boost/beast/zlib/zlib.hpp \
+  ../installed/include/boost/beast/zlib/detail/deflate_stream.hpp \
+  ../installed/include/boost/beast/zlib/detail/ranges.hpp \
+  ../installed/include/boost/beast/zlib/detail/deflate_stream.ipp \
+  ../installed/include/boost/beast/zlib/inflate_stream.hpp \
+  ../installed/include/boost/beast/zlib/detail/inflate_stream.hpp \
+  ../installed/include/boost/beast/zlib/detail/bitstream.hpp \
+  ../installed/include/boost/beast/zlib/detail/window.hpp \
+  ../installed/include/boost/beast/zlib/detail/inflate_stream.ipp \
+  ../installed/include/boost/beast/websocket/impl/stream_impl.hpp \
+  ../installed/include/boost/beast/websocket/detail/mask.hpp \
+  ../installed/include/boost/beast/websocket/detail/mask.ipp \
+  ../installed/include/boost/beast/websocket/detail/service.hpp \
+  ../installed/include/boost/beast/core/detail/service_base.hpp \
+  ../installed/include/boost/beast/websocket/detail/service.ipp \
+  ../installed/include/boost/beast/websocket/detail/soft_mutex.hpp \
+  ../installed/include/boost/beast/websocket/impl/accept.hpp \
+  ../installed/include/boost/beast/websocket/detail/type_traits.hpp \
+  ../installed/include/boost/beast/websocket/impl/close.hpp \
+  ../installed/include/boost/beast/websocket/impl/handshake.hpp \
+  ../installed/include/boost/beast/websocket/impl/ping.hpp \
+  ../installed/include/boost/beast/websocket/impl/read.hpp \
+  ../installed/include/boost/beast/websocket/impl/stream.hpp \
+  ../installed/include/boost/beast/websocket/impl/write.hpp \
+  ../installed/include/boost/beast/websocket/ssl.hpp \
+  ../installed/include/boost/beast/websocket/impl/ssl.hpp
 
+
+../installed/include/boost/beast/websocket/impl/ssl.hpp:
+
+../installed/include/boost/beast/websocket/ssl.hpp:
+
+../installed/include/boost/beast/websocket/impl/close.hpp:
+
+../installed/include/boost/beast/websocket/detail/service.ipp:
+
+../installed/include/boost/beast/core/detail/service_base.hpp:
+
+../installed/include/boost/beast/websocket/detail/mask.ipp:
+
+../installed/include/boost/beast/websocket/impl/stream_impl.hpp:
+
+../installed/include/boost/beast/zlib/detail/window.hpp:
+
+../installed/include/boost/beast/zlib/detail/inflate_stream.hpp:
+
+../installed/include/boost/beast/zlib/detail/deflate_stream.ipp:
+
+../installed/include/boost/beast/zlib/error.hpp:
+
+../installed/include/boost/beast/zlib/deflate_stream.hpp:
+
+../installed/include/boost/beast/websocket/detail/pmd_extension.ipp:
+
+../installed/include/boost/endian/detail/is_trivially_copyable.hpp:
+
+../installed/include/boost/core/scoped_enum.hpp:
+
+../installed/include/boost/endian/detail/intrinsic.hpp:
+
+../installed/include/boost/endian/detail/requires_cxx11.hpp:
+
+../installed/include/boost/beast/websocket/detail/utf8_checker.hpp:
+
+../installed/include/boost/beast/websocket/detail/impl_base.hpp:
+
+../installed/include/boost/beast/core/detail/base64.ipp:
+
+../installed/include/boost/beast/core/detail/base64.hpp:
+
+../installed/include/boost/beast/websocket/detail/hybi13.hpp:
+
+../installed/include/boost/beast/websocket/impl/rfc6455.hpp:
+
+../installed/include/boost/beast/websocket/option.hpp:
+
+../installed/include/boost/beast/websocket/impl/error.ipp:
+
+../installed/include/boost/beast/websocket/impl/error.hpp:
+
+../installed/include/boost/beast/websocket/error.hpp:
+
+../installed/include/boost/beast/websocket.hpp:
 
 /usr/include/c++/13/deque:
 
@@ -2317,6 +2471,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/lib/gcc/x86_64-linux-gnu/13/include/avx512ifmavlintrin.h:
 
+../installed/include/boost/beast/zlib/detail/inflate_stream.ipp:
+
 /usr/lib/gcc/x86_64-linux-gnu/13/include/avx512vldqintrin.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/13/include/avx512vlintrin.h:
@@ -2387,8 +2543,6 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/folly/lang/RValueReferenceWrapper.h:
 
-../installed/include/folly/container/Access.h:
-
 /usr/include/c++/13/shared_mutex:
 
 /usr/include/c++/13/memory_resource:
@@ -2417,6 +2571,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/folly/ConstexprMath.h:
 
+../installed/include/boost/beast/zlib/impl/error.ipp:
+
 /usr/include/c++/13/cinttypes:
 
 ../installed/include/folly/lang/Bits.h:
@@ -2435,7 +2591,11 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/folly/functional/Invoke.h:
 
+../installed/include/boost/beast/websocket/impl/read.hpp:
+
 ../installed/include/folly/container/HeterogeneousAccess-fwd.h:
+
+../installed/include/boost/beast/zlib/detail/bitstream.hpp:
 
 ../installed/include/folly/lang/Byte.h:
 
@@ -2448,6 +2608,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/fmt/format.h:
 
 ../installed/include/folly/portability/Constexpr.h:
+
+../installed/include/boost/endian/detail/endian_load.hpp:
 
 ../installed/include/folly/container/HeterogeneousAccess.h:
 
@@ -2463,15 +2625,35 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/folly/Utility.h:
 
+../installed/include/boost/beast/core/detail/pcg.hpp:
+
 ../installed/include/folly/Traits.h:
 
 ../installed/include/folly/folly-config.h:
+
+../installed/include/boost/beast/websocket/stream_fwd.hpp:
 
 /usr/lib/gcc/x86_64-linux-gnu/13/include/xmmintrin.h:
 
 ../installed/include/folly/portability/Config.h:
 
 ../installed/include/folly/concurrency/ConcurrentHashMap.h:
+
+/usr/include/c++/13/pstl/glue_numeric_defs.h:
+
+/usr/include/c++/13/ranges:
+
+/usr/include/c++/13/bits/fs_ops.h:
+
+/usr/include/c++/13/filesystem:
+
+/usr/include/c++/13/bits/indirect_array.h:
+
+/usr/include/c++/13/bits/valarray_array.tcc:
+
+../installed/include/folly/container/Access.h:
+
+/usr/include/c++/13/bits/forward_list.tcc:
 
 ../installed/include/boost/beast/http/impl/write.hpp:
 
@@ -2480,6 +2662,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/beast/core/detail/read.hpp:
 
 ../installed/include/boost/beast/http/impl/read.hpp:
+
+/usr/include/c++/13/bits/random.h:
 
 ../installed/include/folly/detail/Futex-inl.h:
 
@@ -2522,6 +2706,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/beast/http/status.hpp:
 
 ../installed/include/boost/beast/http/impl/rfc7230.hpp:
+
+../installed/include/boost/beast/websocket/detail/frame.hpp:
 
 ../installed/include/boost/beast/http/detail/basic_parsed_list.hpp:
 
@@ -2576,6 +2762,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/utility/string_view.hpp:
 
 /usr/include/c++/13/typeindex:
+
+../installed/include/boost/beast/websocket/detail/mask.hpp:
 
 ../installed/include/boost/container_hash/detail/hash_range.hpp:
 
@@ -2769,6 +2957,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/beast/core/impl/multi_buffer.hpp:
 
+../installed/include/boost/endian/detail/integral_by_size.hpp:
+
 ../installed/include/boost/intrusive/detail/size_holder.hpp:
 
 ../installed/include/boost/intrusive/detail/tree_value_compare.hpp:
@@ -2793,11 +2983,15 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/move/detail/reverse_iterator.hpp:
 
+/usr/include/c++/13/bits/stl_numeric.h:
+
 ../installed/include/boost/intrusive/detail/is_stateful_value_traits.hpp:
 
 ../installed/include/boost/intrusive/detail/node_holder.hpp:
 
 ../installed/include/boost/move/detail/pointer_element.hpp:
+
+/usr/include/x86_64-linux-gnu/c++/13/bits/opt_random.h:
 
 ../installed/include/boost/intrusive/pack_options.hpp:
 
@@ -2914,6 +3108,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/folly/hash/Hash.h:
 
 ../installed/include/boost/type_traits/is_destructible.hpp:
+
+/usr/include/c++/13/random:
 
 ../installed/include/boost/type_traits/is_constructible.hpp:
 
@@ -3309,6 +3505,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/predef/os/macos.h:
 
+../installed/include/boost/beast/zlib/detail/deflate_stream.hpp:
+
 ../installed/include/boost/predef/os/beos.h:
 
 ../installed/include/boost/predef/os/aix.h:
@@ -3495,6 +3693,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/future:
 
+../installed/include/boost/endian/conversion.hpp:
+
 ../installed/include/boost/asio/local/seq_packet_protocol.hpp:
 
 ../installed/include/boost/asio/local/datagram_protocol.hpp:
@@ -3524,6 +3724,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/beast/core/file_win32.hpp:
 
 ../installed/include/boost/asio/ip/impl/host_name.ipp:
+
+/usr/include/c++/13/bits/random.tcc:
 
 ../installed/include/boost/asio/detail/resolve_op.hpp:
 
@@ -3571,6 +3773,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/asio/ip/impl/network_v4.hpp:
 
+../installed/include/boost/beast/websocket/stream_base.hpp:
+
 ../installed/include/boost/asio/ip/network_v4.hpp:
 
 ../installed/include/boost/asio/ip/address_v6_range.hpp:
@@ -3602,6 +3806,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/asio/ip/impl/address_v4.hpp:
 
 ../installed/include/boost/asio/detail/winsock_init.hpp:
+
+../installed/include/boost/endian/detail/endian_store.hpp:
 
 ../installed/include/boost/intrusive/detail/hook_traits.hpp:
 
@@ -3678,6 +3884,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/c++/13/bits/unique_lock.h:
 
 ../installed/include/boost/asio/traits/query_static_constexpr_member.hpp:
+
+../installed/include/boost/endian/detail/order.hpp:
 
 ../installed/include/boost/container_hash/detail/hash_mix.hpp:
 
@@ -3835,6 +4043,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/bits/stl_relops.h:
 
+../installed/include/boost/beast/websocket/detail/soft_mutex.hpp:
+
 ../installed/include/boost/beast/core/impl/string.ipp:
 
 /usr/include/asm-generic/sockios.h:
@@ -3897,6 +4107,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/preprocessor/tuple/eat.hpp:
 
+../installed/include/boost/beast/websocket/detail/hybi13.ipp:
+
 ../installed/include/boost/operators.hpp:
 
 /usr/include/c++/13/bits/atomic_futex.h:
@@ -3957,6 +4169,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/arpa/inet.h:
 
+../trading/market_data/ws_struct.h:
+
 ../installed/include/openssl/obj_mac.h:
 
 /usr/include/x86_64-linux-gnu/bits/sigaction.h:
@@ -3994,6 +4208,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/asm-generic/posix_types.h:
 
 ../exchange/order_server/client_response.h:
+
+../installed/include/boost/endian/detail/endian_reverse.hpp:
 
 ../installed/include/boost/asio/any_completion_executor.hpp:
 
@@ -4037,6 +4253,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../trading/strategy/liquidity_taker.h:
 
+../installed/include/boost/beast/core/detail/sha1.ipp:
+
 ../installed/include/boost/asio/detail/service_registry.hpp:
 
 ../installed/include/boost/asio/detail/posix_thread.hpp:
@@ -4052,6 +4270,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/predef/platform/android.h:
 
 ../trading/strategy/feature_engine.h:
+
+../trading/market_data/websocket.h:
 
 ../installed/include/boost/beast/http/impl/rfc7230.ipp:
 
@@ -4135,6 +4355,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/bits/codecvt.h:
 
+/usr/include/c++/13/bits/gslice_array.h:
+
 ../installed/include/boost/system/detail/std_category.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/long-double.h:
@@ -4168,6 +4390,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/c++/13/bits/chrono_io.h:
 
 /usr/include/c++/13/bits/align.h:
+
+/usr/include/c++/13/bits/gslice.h:
 
 ../common/tcp_socket.h:
 
@@ -4225,6 +4449,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/bits/semaphore_base.h:
 
+../installed/include/boost/beast/websocket/impl/write.hpp:
+
 ../installed/include/boost/container_hash/detail/requires_cxx11.hpp:
 
 ../installed/include/boost/asio/multiple_exceptions.hpp:
@@ -4240,6 +4466,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/x86_64-linux-gnu/c++/13/bits/c++config.h:
 
 /usr/include/x86_64-linux-gnu/asm/socket.h:
+
+../installed/include/boost/beast/websocket/rfc6455.hpp:
 
 ../installed/include/boost/asio/execution/bulk_execute.hpp:
 
@@ -4296,6 +4524,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/asio/ssl/error.hpp:
 
 /usr/include/linux/limits.h:
+
+../installed/include/boost/beast/websocket/impl/stream.hpp:
 
 /usr/lib/gcc/x86_64-linux-gnu/13/include/avx512bwintrin.h:
 
@@ -4362,6 +4592,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/x86_64-linux-gnu/bits/uio_lim.h:
 
 /usr/include/c++/13/ext/alloc_traits.h:
+
+../installed/include/boost/beast/websocket/impl/accept.hpp:
 
 ../installed/include/boost/asio/detail/timer_queue_ptime.hpp:
 
@@ -4497,6 +4729,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/bits/ptr_traits.h:
 
+../installed/include/boost/beast/websocket/detail/type_traits.hpp:
+
 ../installed/include/boost/beast/http/serializer.hpp:
 
 /usr/include/c++/13/bits/ostream.tcc:
@@ -4545,6 +4779,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/date_time/posix_time/date_duration_operators.hpp:
 
+../installed/include/boost/beast/zlib/zlib.hpp:
+
 ../installed/include/boost/type_traits/has_unary_minus.hpp:
 
 /usr/include/c++/13/bits/std_abs.h:
@@ -4592,6 +4828,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/date_time/gregorian_calendar.hpp:
 
 /usr/include/c++/13/debug/assertions.h:
+
+../installed/include/boost/beast/websocket/detail/service.hpp:
 
 ../installed/include/folly/Preprocessor.h:
 
@@ -4725,6 +4963,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/stdc-predef.h:
 
+/usr/include/c++/13/bits/fs_fwd.h:
+
 /usr/include/c++/13/bits/stl_construct.h:
 
 /usr/include/x86_64-linux-gnu/bits/typesizes.h:
@@ -4751,9 +4991,13 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/config/workaround.hpp:
 
+../installed/include/boost/beast/websocket/impl/ping.hpp:
+
 /usr/lib/gcc/x86_64-linux-gnu/13/include/clwbintrin.h:
 
 /usr/include/x86_64-linux-gnu/bits/sigevent-consts.h:
+
+/usr/include/c++/13/bits/valarray_before.h:
 
 /usr/include/c++/13/cstdio:
 
@@ -4771,7 +5015,11 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/smart_ptr/detail/sp_thread_pause.hpp:
 
+../installed/include/boost/beast/zlib/detail/ranges.hpp:
+
 /usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h:
+
+../installed/include/boost/beast/websocket/detail/prng.ipp:
 
 ../installed/include/boost/mpl/aux_/numeric_op.hpp:
 
@@ -4810,6 +5058,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/predef/compiler/metrowerks.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
+
+../installed/include/boost/beast/websocket/detail/prng.hpp:
 
 /usr/include/c++/13/tr1/poly_hermite.tcc:
 
@@ -4891,6 +5141,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/bits/charconv.h:
 
+/usr/include/c++/13/bits/slice_array.h:
+
 /usr/include/x86_64-linux-gnu/c++/13/bits/atomic_word.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h:
@@ -4950,6 +5202,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/c++/13/ostream:
 
 ../installed/include/boost/asio/detail/impl/reactive_socket_service_base.ipp:
+
+../installed/include/boost/beast/zlib/inflate_stream.hpp:
 
 /usr/include/c++/13/bits/streambuf_iterator.h:
 
@@ -5321,6 +5575,10 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/ctype.h:
 
+../installed/include/boost/endian/detail/is_scoped_enum.hpp:
+
+/usr/include/c++/13/bits/fs_dir.h:
+
 /usr/include/c++/13/bits/basic_ios.tcc:
 
 ../installed/include/boost/asio/detail/non_const_lvalue.hpp:
@@ -5374,6 +5632,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../exchange/market_data/market_update.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h:
+
+../installed/include/boost/beast/core/detail/sha1.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/wordsize.h:
 
@@ -5484,6 +5744,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/asio/impl/connect_pipe.ipp:
 
 ../installed/include/boost/mpl/aux_/config/adl.hpp:
+
+/usr/include/c++/13/bits/valarray_array.h:
 
 ../installed/include/boost/asio/ip/address_v4.hpp:
 
@@ -5645,6 +5907,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/mpl/aux_/config/has_apply.hpp:
 
+/usr/include/c++/13/codecvt:
+
 ../installed/include/boost/intrusive/detail/algorithm.hpp:
 
 ../installed/include/boost/asio/detail/handler_invoke_helpers.hpp:
@@ -5681,6 +5945,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/asio/detail/operation.hpp:
 
+../installed/include/boost/beast/websocket/detail/utf8_checker.ipp:
+
 ../installed/include/boost/asio/detail/select_interrupter.hpp:
 
 ../installed/include/openssl/cterr.h:
@@ -5690,6 +5956,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 /usr/include/x86_64-linux-gnu/sys/stat.h:
 
 /usr/include/c++/13/bits/ranges_algo.h:
+
+/usr/include/c++/13/forward_list:
 
 /usr/include/x86_64-linux-gnu/bits/stdlib-float.h:
 
@@ -5726,6 +5994,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/asio/detail/keyword_tss_ptr.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h:
+
+/usr/include/c++/13/bits/fs_path.h:
 
 ../installed/include/boost/beast/core/impl/error.ipp:
 
@@ -5782,6 +6052,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/preprocessor/repetition/enum_trailing_params.hpp:
 
 ../installed/include/boost/asio/detail/impl/epoll_reactor.hpp:
+
+/usr/include/c++/13/bits/valarray_after.h:
 
 ../installed/include/boost/asio/detail/impl/epoll_reactor.ipp:
 
@@ -5941,6 +6213,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/asio/detail/string_view.hpp:
 
+../installed/include/boost/beast/websocket/detail/pmd_extension.hpp:
+
 ../installed/include/folly/synchronization/HazptrHolder.h:
 
 ../installed/include/boost/predef/platform/windows_uwp.h:
@@ -6026,6 +6300,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/smart_ptr/detail/sp_has_sync_intrinsics.hpp:
 
 /usr/include/gflags/gflags.h:
+
+../installed/include/json/json.hpp:
 
 ../installed/include/boost/smart_ptr/detail/sp_typeinfo_.hpp:
 
@@ -6161,6 +6437,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/date_time/date_duration.hpp:
 
+/usr/include/c++/13/bits/forward_list.h:
+
 ../installed/include/boost/move/detail/std_ns_end.hpp:
 
 /usr/include/c++/13/tr1/bessel_function.tcc:
@@ -6177,9 +6455,13 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 /usr/include/c++/13/tr1/riemann_zeta.tcc:
 
+/usr/include/c++/13/valarray:
+
 ../installed/include/boost/date_time/special_defs.hpp:
 
 ../installed/include/boost/numeric/conversion/detail/sign_mixture.hpp:
+
+../installed/include/boost/beast/websocket/impl/handshake.hpp:
 
 ../installed/include/boost/asio/detail/recycling_allocator.hpp:
 
@@ -6232,6 +6514,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/date_time/wrapping_int.hpp:
 
 ../installed/include/boost/date_time/date_generators.hpp:
+
+../installed/include/boost/beast/websocket/stream.hpp:
 
 ../installed/include/boost/asio/basic_serial_port.hpp:
 
@@ -6288,6 +6572,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/mpl/bool_fwd.hpp:
 
 ../installed/include/boost/mpl/integral_c_tag.hpp:
+
+../installed/include/boost/beast/core/detail/chacha.hpp:
 
 ../installed/include/boost/intrusive/intrusive_fwd.hpp:
 
@@ -6352,6 +6638,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/asio/detail/impl/service_registry.ipp:
 
 ../installed/include/boost/preprocessor/inc.hpp:
+
+/usr/include/c++/13/bits/mask_array.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_sigstack.h:
 
@@ -6483,6 +6771,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/mpl/aux_/include_preprocessed.hpp:
 
+/usr/include/c++/13/numeric:
+
 ../installed/include/boost/mpl/aux_/preprocessed/gcc/apply_wrap.hpp:
 
 ../installed/include/boost/mpl/void.hpp:
@@ -6537,6 +6827,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 
 ../installed/include/boost/numeric/conversion/detail/bounds.hpp:
 
+../installed/include/boost/beast/zlib/impl/error.hpp:
+
 /usr/include/x86_64-linux-gnu/bits/select.h:
 
 ../installed/include/boost/numeric/conversion/numeric_cast_traits.hpp:
@@ -6560,6 +6852,8 @@ CMakeFiles/trading_main.dir/trading/trading_main.cpp.o: ../trading/trading_main.
 ../installed/include/boost/predef/version_number.h:
 
 ../installed/include/boost/date_time/posix_time/time_period.hpp:
+
+../installed/include/boost/beast/websocket/detail/decorator.hpp:
 
 ../installed/include/boost/system/error_category.hpp:
 

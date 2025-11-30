@@ -47,7 +47,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/trading_main")
     file(RPATH_CHECK
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/trading_main"
-         RPATH "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/installed/")
+         RPATH "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/installed/lib")
   endif()
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/build/bin/trading_main")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/trading_main" AND
@@ -55,7 +55,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
     file(RPATH_CHANGE
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/trading_main"
          OLD_RPATH "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/installed/lib:"
-         NEW_RPATH "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/installed/")
+         NEW_RPATH "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10/installed/lib")
     if(CMAKE_INSTALL_DO_STRIP)
       execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/trading_main")
     endif()

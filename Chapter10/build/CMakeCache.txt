@@ -62,7 +62,7 @@ CMAKE_CXX_COMPILER_AR:FILEPATH=/usr/bin/gcc-ar-13
 CMAKE_CXX_COMPILER_RANLIB:FILEPATH=/usr/bin/gcc-ranlib-13
 
 //Flags used by the CXX compiler during all build types.
-CMAKE_CXX_FLAGS:STRING=-fPIC -Wall -Os -DVERSION="2025/10/04 23:55:46-b428a42" -DBUILD_TIME="2025/10/19 23:46:05"
+CMAKE_CXX_FLAGS:STRING=-fPIC -Wall -Os -DVERSION="2025/10/31 01:28:43-7780bd49" -DBUILD_TIME="2025/11/17 23:28:13"
 
 //Flags used by the CXX compiler during DEBUG builds.
 CMAKE_CXX_FLAGS_DEBUG:STRING=-g
