@@ -533,9 +533,9 @@ public:
 		m_host(host),
 		m_port(port) 
 		{
-			m_router.register_route("^books5\\|BTC-USDT-SWAP$", [this](const json& msg) {handle_books5_BTC_USDT_SWAP(msg);});
-			m_router.register_route("^trades\\|BTC-USDT-SWAP$", [this](const json& msg) {handle_trades_BTC_USDT_SWAP(msg);});
-			m_router.register_route("^bbo-tbt\\|BTC-USDT-SWAP$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT_SWAP(msg);});
+			m_router.register_route("^books5\\|BTC-USDT-SPOT$", [this](const json& msg) {handle_books5_BTC_USDT_SPOT(msg);});
+			m_router.register_route("^trades\\|BTC-USDT-SPOT$", [this](const json& msg) {handle_trades_BTC_USDT_SPOT(msg);});
+			m_router.register_route("^bbo-tbt\\|BTC-USDT-SPOT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT_SPOT(msg);});
 			m_router.register_route("subscribe", [this](const json& msg) {handle_subscribe_success(msg);});
 			m_router.register_route("error", [this](const json& msg) {handle_subscribe_error(msg);});
 		}
@@ -543,9 +543,9 @@ public:
 	void start()
     {
       m_publicSession = std::make_shared<WebSocketSession>(m_ioc, m_router, m_public_target);
-      m_publicSession->addTopic("books5", "BTC-USDT-SWAP");
-      m_publicSession->addTopic("trades", "BTC-USDT-SWAP");
-	  m_publicSession->addTopic("bbo-tbt", "BTC-USDT-SWAP"); // only best bid/ask price size, 10ms, no depth structure
+      m_publicSession->addTopic("books5", "BTC-USDT-SPOT");
+      m_publicSession->addTopic("trades", "BTC-USDT-SPOT");
+	  m_publicSession->addTopic("bbo-tbt", "BTC-USDT-SPOT"); // only best bid/ask price size, 10ms, no depth structure
 	  //m_publicSession->addTopic("books-l2-tbt", "BTC-USDT-SWAP"); // multiple level price to fully reconstruct L2 orderbook
       m_publicSession->run(m_host.c_str(), m_port.c_str());
 
@@ -553,9 +553,9 @@ public:
     }
 
 private:
-    void handle_books5_BTC_USDT_SWAP(const json& msg);
-	void handle_trades_BTC_USDT_SWAP(const json& msg);
-	void handle_bbo_tbt_BTC_USDT_SWAP(const json& msg);
+    void handle_books5_BTC_USDT_SPOT(const json& msg);
+	void handle_trades_BTC_USDT_SSPOT(const json& msg);
+	void handle_bbo_tbt_BTC_USDT_SPOT(const json& msg);
 
 	void handle_subscribe_success(const json& msg);
 	void handle_subscribe_error(const json& msg);

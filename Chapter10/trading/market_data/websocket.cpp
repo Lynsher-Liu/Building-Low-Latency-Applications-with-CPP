@@ -52,9 +52,15 @@ void WsRouter::route_request(json msg)
     }
 }
 
-void AsyncWebsocketClient::handle_books5_BTC_USDT_SWAP(const json& msg)
+/**
+ * @brief handle depth data of top 5 bid/ask
+ * 数量: 合并了该价位所有挂单的总量
+ * 档位: 该档位的等待成交的挂单数量, 有时代表“由流动性提供商提供的数量”
+ * order数量: 这个价格档位是由n个独立的order组成的
+ */
+void AsyncWebsocketClient::handle_books5_BTC_USDT_SPOT(const json& msg)
 {
-	std::cout << "enter handle_books5_BTC_USDT_SWAP, msg: " << msg << "\n";
+	std::cout << "enter handle_books5_BTC_USDT_SPOT, msg: " << msg << "\n";
     //TODO: simply process then put into queue
 
     /**
@@ -65,7 +71,7 @@ void AsyncWebsocketClient::handle_books5_BTC_USDT_SWAP(const json& msg)
         },
         "data": [
             {
-                "asks": [ //["价格", "数量", "档位", "数量"]
+                "asks": [ //["价格", "总量", "档位", "order数量"]
                     [
                         "90608.4",
                         "64.88",
@@ -77,54 +83,12 @@ void AsyncWebsocketClient::handle_books5_BTC_USDT_SWAP(const json& msg)
                         "65.23",
                         "0",
                         "1"
-                    ],
-                    [
-                        "90608.7",
-                        "55.58",
-                        "0",
-                        "1"
-                    ],
-                    [
-                        "90608.8",
-                        "69.18",
-                        "0",
-                        "1"
-                    ],
-                    [
-                        "90609",
-                        "69.2",
-                        "0",
-                        "1"
                     ]
                 ],
                 "bids": [
                     [
                         "90608.3",
                         "0.66",
-                        "0",
-                        "1"
-                    ],
-                    [
-                        "90608",
-                        "248.55",
-                        "0",
-                        "2"
-                    ],
-                    [
-                        "90607.6",
-                        "10.66",
-                        "0",
-                        "1"
-                    ],
-                    [
-                        "90606.4",
-                        "0.01",
-                        "0",
-                        "1"
-                    ],
-                    [
-                        "90606.3",
-                        "0.29",
                         "0",
                         "1"
                     ]
@@ -138,9 +102,10 @@ void AsyncWebsocketClient::handle_books5_BTC_USDT_SWAP(const json& msg)
      */
 }
 
-void AsyncWebsocketClient::handle_trades_BTC_USDT_SWAP(const json& msg)
+void AsyncWebsocketClient::handle_trades_BTC_USDT_SPOT(const json& msg)
 {
-	std::cout << "enter handle_trades_BTC_USDT_SWAP, msg: " << msg << "\n";
+	std::cout << "enter handle_trades_BTC_USDT_SPOT, msg: " << msg << "\n";
+    //TODO: simply process then put into queue
     /**
      * {
         "arg": {
@@ -164,9 +129,9 @@ void AsyncWebsocketClient::handle_trades_BTC_USDT_SWAP(const json& msg)
      */
 }
 
-void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT_SWAP(const json& msg)
+void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT_SPOT(const json& msg)
 {
-    std::cout << "enter handle_bbo_tbt_BTC_USDT_SWAP, msg: " << msg << "\n";
+    std::cout << "enter handle_bbo_tbt_BTC_USDT_SPOT, msg: " << msg << "\n";
 }
 
 void AsyncWebsocketClient::handle_subscribe_success(const json& msg)
