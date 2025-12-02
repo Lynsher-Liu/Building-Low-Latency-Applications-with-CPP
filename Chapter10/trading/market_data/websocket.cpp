@@ -55,16 +55,10 @@ void WsRouter::route_request(json msg)
 /**
  * @brief handle depth data of top 5 bid/ask
  * 数量: 合并了该价位所有挂单的总量
- * 档位: 该档位的等待成交的挂单数量, 有时代表“由流动性提供商提供的数量”
+ * 档位: 0该字段已弃用(始终为0)
  * order数量: 这个价格档位是由n个独立的order组成的
- */
-void AsyncWebsocketClient::handle_books5_BTC_USDT_SPOT(const json& msg)
-{
-	std::cout << "enter handle_books5_BTC_USDT_SPOT, msg: " << msg << "\n";
-    //TODO: simply process then put into queue
-
-    /**
-     * {
+ * 
+ * {
         "arg": {
             "channel": "books5",
             "instId": "BTC-USDT-SWAP"
@@ -99,34 +93,49 @@ void AsyncWebsocketClient::handle_books5_BTC_USDT_SPOT(const json& msg)
             }
         ]
     }
-     */
+ */
+void AsyncWebsocketClient::handle_books5_BTC_USDT_SPOT(const json& msg)
+{
+	std::cout << "enter handle_books5_BTC_USDT_SPOT, msg: " << msg << "\n";
+    //TODO: simply process then put into queue
+
 }
 
-void AsyncWebsocketClient::handle_trades_BTC_USDT_SPOT(const json& msg)
-{
-	std::cout << "enter handle_trades_BTC_USDT_SPOT, msg: " << msg << "\n";
-    //TODO: simply process then put into queue
-    /**
-     * {
+/**
+ * @brief 获取最近的成交数据，有成交数据就推送，每次推送可能聚合多条成交数据
+ * sz成交数量: 对于币币交易，成交数量的单位为交易货币;对于交割、永续以及期权，单位为张
+ * 
+ * 聚合订单:当count = 1时，表示taker订单部分或完全成交时仅匹配了一个maker订单。
+ *          当count > 1时，表示taker订单以相同价格匹配了多个maker订单。
+ *              例如，如果tradeId = 123，且count = 3，表示该消息聚合了tradeId = 123, 122, 121的成交。maker侧有多笔价格相同的订单被成交。
+ * 
+ * seqId: 同时发生的不同交易推送数据的`seqId`可能相同
+ * 
+ * {
         "arg": {
             "channel": "trades",
             "instId": "BTC-USDT-SWAP"
         },
         "data": [
             {
-                "count": "1",
+                "count": "1",           // 聚合的订单匹配数量
                 "instId": "BTC-USDT-SWAP",
-                "px": "90608.4",
-                "seqId": 785659571,
-                "side": "sell",
-                "source": "0",
-                "sz": "0.35",
-                "tradeId": "2491342311",
+                "px": "90608.4",        // 成交价格
+                "seqId": 785659571,     // 推送的序列号
+                "side": "sell",         // 吃单方向
+                "source": "0",          // 订单来源, 0：普通订单, 1：流动性增强计划订单
+                "sz": "0.35",           // 成交数量
+                "tradeId": "2491342311", // 聚合的多笔交易中最新一笔交易的成交ID
                 "ts": "1764505177974"
             }
         ]
     }
-     */
+ */
+void AsyncWebsocketClient::handle_trades_BTC_USDT_SPOT(const json& msg)
+{
+	std::cout << "enter handle_trades_BTC_USDT_SPOT, msg: " << msg << "\n";
+    //TODO: simply process then put into queue
+
 }
 
 void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT_SPOT(const json& msg)
