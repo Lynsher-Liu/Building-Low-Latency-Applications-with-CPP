@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:35
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2025-12-03 17:20:10
+ * @FilePath: /my_HFT/Chapter10/trading/market_data/ws_struct.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include <cstdint>
@@ -38,7 +46,6 @@ namespace Common
 		return "UNKNOWN";
 	}
 
-	/// Risk configuration containing limits on risk parameters for the RiskManager.
 	struct WsTopic 
 	{		
 		std::string m_channel;
@@ -63,7 +70,33 @@ namespace Common
 		}
 	};
 
-	enum WsConnectState {CONNECTED = 0, CONNECTING = 1, DISCONNECTED = 2};
+	enum WsConnectState {
+		DISCONNECTED,
+		DNS_RESOLVE,
+		TCP_CONNECT,
+		TLS_HANDSHAKE,
+		WS_HANDSHAKE,
+		LOGGED_IN,     // 私有连接用
+		SUBSCRIBING,
+		RUNNING
+	}; //CONNECTED = 0, CONNECTING = 1, DISCONNECTED = 2
+
+	const char* state_name(WsConnectState s)
+	{
+        switch(s)
+		{
+            case WsConnectState::DISCONNECTED:  return "DISCONNECTED";
+            case WsConnectState::DNS_RESOLVE:   return "DNS_RESOLVE";
+            case WsConnectState::TCP_CONNECT:   return "TCP_CONNECT";
+            case WsConnectState::TLS_HANDSHAKE: return "TLS_HANDSHAKE";
+            case WsConnectState::WS_HANDSHAKE:  return "WS_HANDSHAKE";
+            case WsConnectState::LOGGED_IN:     return "LOGGED_IN";
+            case WsConnectState::SUBSCRIBING:   return "SUBSCRIBING";
+            case WsConnectState::RUNNING:       return "RUNNING";
+        }
+        return "?";
+    }
+
 	enum WsConnectEvent {START_CONNECT = 0, CONNECT_SUCCESS = 1, CONNECT_FAILED = 2, CONNECT_LOST = 3};
 	/**
 	 * state machine diagram:

@@ -133,7 +133,7 @@ private:
 
 public:
     // Resolver and socket require an io_context
-    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, std::string target) :
+    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, string target) :
         resolver_(net::make_strand(ioc)),
         stream_(net::make_strand(ioc), ssl_ctx_),
 		ping_timer_(ioc),
@@ -145,9 +145,12 @@ public:
 		std::cout << "Start a new WebSocketSession\n";
 		m_topics.reserve(MAX_TOPIC_SIZE);
 
-		if(!SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), "wspap.okx.com"))
+		if(!SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host))
       		throw beast::system_error(beast::error_code(static_cast<int>(::ERR_get_error()),
                 net::error::get_ssl_category()));
+        
+        // Set the expected hostname in the peer certificate for verification
+        stream_.next_layer().set_verify_callback(ssl::host_name_verification(host));
 		
 		// 控制帧：捕获 pong
         stream_.control_callback(
@@ -160,14 +163,14 @@ public:
 
 	void addTopic(std::string channel, std::string instId)
 	{
-		//TODO: determine WsOpType
-		WsTopic topic{channel, instId};
-		m_topics.emplace_back(topic);
+		m_topics.emplace_back(WsTopic{channel, instId, WsTopicStatus::PENDING});
 	}
 
     // Start the asynchronous operation
     void run(char const* host, char const* port)
     {
+// put it in constructor
+#if 0 
 		// Set SNI Hostname (many hosts need this to handshake successfully)
         if(! SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host))
         {
@@ -180,12 +183,13 @@ public:
 
         // Set the expected hostname in the peer certificate for verification
         stream_.next_layer().set_verify_callback(ssl::host_name_verification(host));
+#endif
 
         // Save these for later
         host_ = host;
 		port_ = port;
 
-		set_state(ConnState::DNS_RESOLVE);
+		set_state(WsConnectState::DNS_RESOLVE);
 
         // Look up the domain name
         resolver_.async_resolve(
@@ -203,8 +207,6 @@ public:
         retry_timer_.cancel(ec);
         stream_.next_layer().next_layer().cancel();
 
-        set_state(ConnState::DISCONNECTED);
-
     	net::post(stream_.get_executor(), [self = shared_from_this()]
 		{
 			beast::error_code ec;
@@ -213,10 +215,13 @@ public:
 			if(ec)
             	return fail(ec, "close");
 		});
+
+        set_state(WsConnectState::DISCONNECTED);
   	}
 
 	void subscribeAllTopics()
 	{		
+        // OKX 要求单报长度 ≤ 4096 bytes，简化：一条条发送（可自行做聚合/分批）
 		for (const auto& topic : m_topics)
 		{
 			send(topic.toSubscribeStr());
@@ -230,14 +235,20 @@ private:
     void handleConnecting(WsConnectEvent event);
     void handleDisconnected(WsConnectEvent event);
 
-    void on_resolve(
-        beast::error_code ec,
-        tcp::resolver::results_type results)
+    void set_state(WsConnectState s)
+    {
+        m_state = s;
+        std::cout << "[STATE] -> " << state_name(s) << "\n";
+    }
+
+    void on_resolve(beast::error_code ec, tcp::resolver::results_type results)
     {
         if(ec)
-            return fail(ec, "resolve");
+            return reconnect("resolve", ec);
 
+        set_state(WsConnectState::TCP_CONNECT);
 		std::cout << "enter on_resolve\n";
+
         // Set a timeout on the operation
         beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
 
@@ -252,17 +263,18 @@ private:
     void on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type ep)
     {
         if(ec)
-            return fail(ec, "connect");
-	
+            return reconnect("connect", ec);
+        
+        set_state(WsConnectState::TLS_HANDSHAKE);
 		std::cout << "enter on_connect\n";
-
-		handleStateTransition(WsConnectEvent::START_CONNECT);
  
         // Update the host_ string. This will provide the value of the
         // Host HTTP header during the WebSocket handshake.
         // See https://tools.ietf.org/html/rfc7230#section-5.4
-        host_ += ':' + std::to_string(ep.port());
+        //host_ += ':' + std::to_string(ep.port());
         
+        //beast::get_lowest_layer(stream_).expires_never();
+
         // Perform the ssl handshake
         stream_.next_layer().async_handshake(ssl::stream_base::client,
             beast::bind_front_handler(
@@ -273,10 +285,11 @@ private:
 	void on_ssl_handshake(beast::error_code ec)
     {
         if(ec)
-            return fail(ec, "ssl_handshake");
+            return reconnect("ssl_handshake", ec);
 
-        // Turn off the timeout on the tcp_stream, because
-        // the websocket stream has its own timeout system.
+        set_state(WsConnectState::WS_HANDSHAKE);
+
+        // Turn off the timeout on the tcp_stream, because the websocket stream has its own timeout system.
         beast::get_lowest_layer(stream_).expires_never();
 
         // Set suggested timeout settings for the websocket
@@ -303,13 +316,14 @@ private:
     void on_handshake(beast::error_code ec)
     {
         if(ec)
-            //return fail(ec, "handshake");
-		     return reconnect("ws_handshake", ec);
+		    return reconnect("ws_handshake", ec);
 
         if(b_private_session_)
             do_login();  // 登录后再订阅
 		
 		std::cout << "enter on_handshake\n";
+        set_state(WsConnectState::SUBSCRIBING);
+
 		// 1) 握手成功后先发订阅（例：OKX books5）
 		subscribeAllTopics();
 		//send(R"({"op":"subscribe","args":[{"channel":"books5","instId":"BTC-USDT-SWAP"}]})");
@@ -384,7 +398,8 @@ private:
 	}
 
     // ---- 登录（私有连接才需要）----
-    void do_login(){
+    void do_login()
+    {
         // 这里只给出骨架：OKX 需要 timestamp + sign (HMAC SHA256 base64)
         // 文档：https://www.okx.com/docs-v5/zh/#websocket-login
         // 你需要自己实现 sign = HMAC_SHA256( prehash, secret_key )→ base64
@@ -400,31 +415,23 @@ private:
         auto ts = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
                  std::chrono::system_clock::now().time_since_epoch()).count());
         arg["timestamp"]  = ts;
-        arg["sign"]       = "<your-signed-string>"; // TODO: 生成签名
+        arg["sign"]       = generateSign(); // TODO: 生成签名
 
         j["args"].push_back(arg);
 
-        write(json_to_str(j));
+        write(j.dump());
+    }
+
+    std::string generateSign()
+    {
+
     }
 
     // 登录/订阅/错误 回执统一在 on_read 里处理
-    void on_login_ack_ok(){
-        set_state(ConnState::SUBSCRIBING);
+    void on_login_ack_ok()
+    {
+        set_state(WsConnectState::SUBSCRIBING);
         send_all_subs();
-    }
-
-    // ---- 订阅管理 ----
-    void send_all_subs(){
-        // 重连后需要重置状态为 Pending
-        for(auto& s : subs_) s.status = Subscription::Status::Pending;
-
-        // OKX 要求单报长度 ≤ 4096 bytes，简化：一条条发送（可自行做聚合/分批）
-        for(auto& s : subs_){
-            json j;
-            j["op"]="subscribe";
-            j["args"]=json::array({ json{{"channel",s.channel},{"instId",s.instId}} });
-            write(json_to_str(j));
-        }
     }
 
     void on_subscribe_ack_ok(const std::string& channel, const std::string& instId){

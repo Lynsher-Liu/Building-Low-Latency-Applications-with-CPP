@@ -61,7 +61,7 @@ build/trading
 installed/
 installed/bin
 installed/exec
-installed/include
+#installed/include
 installed/lib
 installed/mapf
 installed/share
