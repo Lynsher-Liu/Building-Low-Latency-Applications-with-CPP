@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib/liblibcommon.a CMakeFiles/libcommon.dir/lf_queue_example.cpp.o CMakeFiles/libcommon.dir/logging_example.cpp.o CMakeFiles/libcommon.dir/mcast_socket.cpp.o CMakeFiles/libcommon.dir/mem_pool_example.cpp.o CMakeFiles/libcommon.dir/socket_example.cpp.o CMakeFiles/libcommon.dir/tcp_server.cpp.o CMakeFiles/libcommon.dir/tcp_socket.cpp.o CMakeFiles/libcommon.dir/thread_example.cpp.o
-/usr/bin/ranlib ../lib/liblibcommon.a

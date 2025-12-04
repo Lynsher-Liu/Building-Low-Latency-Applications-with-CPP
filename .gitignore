@@ -36,6 +36,7 @@
 cmake-build*
 *.log
 
+.env
 
 .vscode
 .project

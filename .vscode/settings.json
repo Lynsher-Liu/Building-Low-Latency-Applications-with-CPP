@@ -1,5 +1,5 @@
 {
-    "cmake.sourceDirectory": "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/Chapter10",
+    "cmake.sourceDirectory": "/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft",
     "git.ignoreLimitWarning": true,
     "files.associations": {
         "string": "cpp",
@@ -85,7 +85,11 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
+        "*.inc": "cpp",
+        "csetjmp": "cpp",
         "any": "cpp",
+        "coroutine": "cpp",
+        "scoped_allocator": "cpp",
         "text_encoding": "cpp"
     }
 }

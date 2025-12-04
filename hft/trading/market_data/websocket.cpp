@@ -1,0 +1,162 @@
+#include "websocket.h"
+#include <regex>
+
+
+using json = nlohmann::json;
+using namespace std;
+namespace Trading 
+{
+
+void WsRouter::register_route(string topic_regex, 
+		callback_t&& cb) 
+{
+    WsRoute route;
+    route.topic_regex = topic_regex;
+    route.m_cb = std::move(cb);
+    routes.push_back(route);
+}
+
+
+void WsRouter::route_request(json msg)
+{
+    for (auto& r : routes) 
+	{
+        // match mqtt msg topic with route regex
+        regex reg {r.topic_regex};
+        smatch match;
+
+        //{"arg":{"channel":"trades","instId":"BTC-USDT-SWAP"},"connId":"f5bee808","event":"subscribe"}
+        //{"arg":{"channel":"books5","instId":"BTC-USDT-SWAP"},"data":[{"asks":[["103259.9","885.31","0","2"],["103261.1","0.83","0","1"],["103261.3","0.02","0","2"],["103261.4","0.01","0","1"],["103262","19.28","0","2"]],"bids":[["103250","21871.09","0","2"],["103218.9","885.4","0","1"],["103217.1","1.95","0","1"],["103216.5","1.96","0","1"],["103215","0.05","0","1"]],"instId":"BTC-USDT-SWAP","ts":"1762700094902","seqId":178414521}]}
+        std::string channel = msg["arg"]["channel"];
+        std::string instId = msg["arg"]["instId"];
+
+        // handle events individually
+        if (msg.contains("event"))
+        {
+            string event = msg["event"];
+            if (std::regex_search(event, match, reg)) 
+            {
+                r.m_cb(msg);
+                break;
+            }
+        }
+		else if (msg.contains("data"))
+        {
+            std::string uid = channel + "|" + instId;
+            if (std::regex_search(uid, match, reg)) 
+            {
+                r.m_cb(msg);
+                break;
+            }
+        }
+    }
+}
+
+/**
+ * @brief handle depth data of top 5 bid/ask
+ * 数量: 合并了该价位所有挂单的总量
+ * 档位: 0该字段已弃用(始终为0)
+ * order数量: 这个价格档位是由n个独立的order组成的
+ * 
+ * {
+        "arg": {
+            "channel": "books5",
+            "instId": "BTC-USDT-SWAP"
+        },
+        "data": [
+            {
+                "asks": [ //["价格", "总量", "档位", "order数量"]
+                    [
+                        "90608.4",
+                        "64.88",
+                        "0",
+                        "1"
+                    ],
+                    [
+                        "90608.6",
+                        "65.23",
+                        "0",
+                        "1"
+                    ]
+                ],
+                "bids": [
+                    [
+                        "90608.3",
+                        "0.66",
+                        "0",
+                        "1"
+                    ]
+                ],
+                "instId": "BTC-USDT-SWAP",
+                "seqId": 785659573,
+                "ts": "1764505178009"
+            }
+        ]
+    }
+ */
+void AsyncWebsocketClient::handle_books5_BTC_USDT_SPOT(const json& msg)
+{
+	std::cout << "enter handle_books5_BTC_USDT_SPOT, msg: " << msg << "\n";
+    //TODO: simply process then put into queue
+
+}
+
+void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT_SPOT(const json& msg)
+{
+    std::cout << "enter handle_bbo_tbt_BTC_USDT_SPOT, msg: " << msg << "\n";
+}
+
+/**
+ * @brief 获取最近的成交数据，有成交数据就推送，每次推送可能聚合多条成交数据
+ * sz成交数量: 对于币币交易，成交数量的单位为交易货币;对于交割、永续以及期权，单位为张
+ * 
+ * 聚合订单:当count = 1时，表示taker订单部分或完全成交时仅匹配了一个maker订单。
+ *          当count > 1时，表示taker订单以相同价格匹配了多个maker订单。
+ *              例如，如果tradeId = 123，且count = 3，表示该消息聚合了tradeId = 123, 122, 121的成交。maker侧有多笔价格相同的订单被成交。
+ * 
+ * seqId: 同时发生的不同交易推送数据的`seqId`可能相同
+ * 
+ * {
+        "arg": {
+            "channel": "trades",
+            "instId": "BTC-USDT-SWAP"
+        },
+        "data": [
+            {
+                "count": "1",           // 聚合的订单匹配数量
+                "instId": "BTC-USDT-SWAP",
+                "px": "90608.4",        // 成交价格
+                "seqId": 785659571,     // 推送的序列号
+                "side": "sell",         // 吃单方向
+                "source": "0",          // 订单来源, 0：普通订单, 1：流动性增强计划订单
+                "sz": "0.35",           // 成交数量
+                "tradeId": "2491342311", // 聚合的多笔交易中最新一笔交易的成交ID
+                "ts": "1764505177974"
+            }
+        ]
+    }
+ */
+void AsyncWebsocketClient::handle_trades_BTC_USDT_SPOT(const json& msg)
+{
+	std::cout << "enter handle_trades_BTC_USDT_SPOT, msg: " << msg << "\n";
+    //TODO: simply process then put into queue
+
+}
+
+void AsyncWebsocketClient::handle_account_update(const json& msg)
+{
+
+}
+
+void AsyncWebsocketClient::handle_positions_update(const json& msg)
+{
+
+}
+
+void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
+{
+
+}
+
+
+}
