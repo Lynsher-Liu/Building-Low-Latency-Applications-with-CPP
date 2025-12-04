@@ -101,8 +101,6 @@ private:
     std::vector<WsRoute> routes;
 };
 
-
-
 // Sends a WebSocket message and prints the response
 class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
@@ -110,7 +108,7 @@ private:
     tcp::resolver resolver_;
     net::io_context& ioc_;
 	ssl::context ssl_ctx_{ssl::context::tls_client};
- 	ws::stream<ssl::stream<beast::tcp_stream>> stream_;
+ 	std::optional<ws::stream<ssl::stream<beast::tcp_stream> > > stream_;
 
     beast::flat_buffer inbuf_;
 	std::deque<std::string> outbox_;  
@@ -138,7 +136,7 @@ public:
     explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, string target) :
         resolver_(net::make_strand(ioc)),
         ioc_(ioc),
-        stream_(net::make_strand(ioc), ssl_ctx_),
+        //stream_(net::make_strand(ioc), ssl_ctx_),
 		ping_timer_(ioc),
         retry_timer_(ioc),
 		b_private_session_(b_private_session),
@@ -147,6 +145,8 @@ public:
     {
 		std::cout << "Start a new WebSocketSession\n";
 		m_topics.reserve(MAX_TOPIC_SIZE);
+
+        stream_.emplace(net::make_strand(ioc), ssl_ctx_);
 
 		if(!SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host))
       		throw beast::system_error(beast::error_code(static_cast<int>(::ERR_get_error()),

@@ -17,7 +17,6 @@
 
 
 #include "AsnLog.h"
-#include "utils.h"
 #include "affinity.h"
 #include <sched.h>
 #include <numa.h>
