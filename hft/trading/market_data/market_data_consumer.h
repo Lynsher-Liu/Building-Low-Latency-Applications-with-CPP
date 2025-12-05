@@ -49,7 +49,7 @@ namespace Trading {
     /// Start and stop the market data consumer main thread.
     auto start() {
       run_ = true;
-      ASSERT(Common::createAndStartThread(-1, "Trading/MarketDataConsumer", [this]() { run(); }) != nullptr, "Failed to start MarketData thread.");
+      ASSERT_MSG(Common::createAndStartThread(-1, "Trading/MarketDataConsumer", [this]() { run(); }) != nullptr, "Failed to start MarketData thread.");
     }
 
     auto stop() -> void {

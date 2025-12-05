@@ -37,7 +37,7 @@ namespace Trading {
     /// Start and stop the trade engine main thread.
     auto start() -> void {
       run_ = true;
-      ASSERT(Common::createAndStartThread(-1, "Trading/TradeEngine", [this] { run(); }) != nullptr, "Failed to start TradeEngine thread.");
+      ASSERT_MSG(Common::createAndStartThread(-1, "Trading/TradeEngine", [this] { run(); }) != nullptr, "Failed to start TradeEngine thread.");
     }
 
     auto stop() -> void {

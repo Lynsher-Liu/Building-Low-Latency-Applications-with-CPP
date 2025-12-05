@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:34
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2025-12-05 16:55:10
+ * @FilePath: /my_HFT/hft/common/lf_queue.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include <iostream>
@@ -29,7 +37,7 @@ namespace Common {
 
     auto updateReadIndex() noexcept {
       next_read_index_ = (next_read_index_ + 1) % store_.size(); // wrap around at the end of container size.
-      ASSERT(num_elements_ != 0, "Read an invalid element in:" + std::to_string(pthread_self()));
+      ASSERT_MSG(num_elements_ != 0, "Read an invalid element in:" + std::to_string(pthread_self()));
       num_elements_--;
     }
 

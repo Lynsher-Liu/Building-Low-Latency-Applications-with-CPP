@@ -35,7 +35,7 @@ namespace Exchange {
           logger_.log("%:% %() % Processing cid:% seq:% %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
                       client_response->client_id_, next_outgoing_seq_num, client_response->toString());
 
-          ASSERT(cid_tcp_socket_[client_response->client_id_] != nullptr,
+          ASSERT_MSG(cid_tcp_socket_[client_response->client_id_] != nullptr,
                  "Dont have a TCPSocket for ClientId:" + std::to_string(client_response->client_id_));
           cid_tcp_socket_[client_response->client_id_]->send(&next_outgoing_seq_num, sizeof(next_outgoing_seq_num));
           cid_tcp_socket_[client_response->client_id_]->send(client_response, sizeof(MEClientResponse));

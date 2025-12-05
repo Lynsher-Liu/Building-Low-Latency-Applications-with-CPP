@@ -84,7 +84,7 @@ namespace Trading {
       for (auto market_update = incoming_md_updates_->getNextToRead(); market_update; market_update = incoming_md_updates_->getNextToRead()) {
         logger_.log("%:% %() % Processing %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
                     market_update->toString().c_str());
-        ASSERT(market_update->ticker_id_ < ticker_order_book_.size(),
+        ASSERT_MSG(market_update->ticker_id_ < ticker_order_book_.size(),
                "Unknown ticker-id on update:" + market_update->toString());
         ticker_order_book_[market_update->ticker_id_]->onMarketUpdate(market_update);
         incoming_md_updates_->updateReadIndex();

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "tcp_server.h"
 
 namespace Common {
@@ -10,13 +11,13 @@ namespace Common {
   /// Start listening for connections on the provided interface and port.
   auto TCPServer::listen(const std::string &iface, int port) -> void {
     epoll_fd_ = epoll_create(1);
-    ASSERT(epoll_fd_ >= 0, "epoll_create() failed error:" + std::string(std::strerror(errno)));
+    ASSERT_MSG(epoll_fd_ >= 0, "epoll_create() failed error:" + std::string(std::strerror(errno)));
 
-    ASSERT(listener_socket_.connect("", iface, port, true) >= 0,
+    ASSERT_MSG(listener_socket_.connect("", iface, port, true) >= 0,
            "Listener socket failed to connect. iface:" + iface + " port:" + std::to_string(port) + " error:" +
            std::string(std::strerror(errno)));
 
-    ASSERT(addToEpollList(&listener_socket_), "epoll_ctl() failed. error:" + std::string(std::strerror(errno)));
+    ASSERT_MSG(addToEpollList(&listener_socket_), "epoll_ctl() failed. error:" + std::string(std::strerror(errno)));
   }
 
   /// Publish outgoing data from the send buffer and read incoming data from the receive buffer.
@@ -84,7 +85,7 @@ namespace Common {
       if (fd == -1)
         break;
 
-      ASSERT(setNonBlocking(fd) && disableNagle(fd),
+      ASSERT_MSG(setNonBlocking(fd) && disableNagle(fd),
              "Failed to set non-blocking or no-delay on socket:" + std::to_string(fd));
 
       logger_.log("%:% %() % accepted socket:%\n", __FILE__, __LINE__, __FUNCTION__,
@@ -93,7 +94,7 @@ namespace Common {
       auto socket = new TCPSocket(logger_);
       socket->socket_fd_ = fd;
       socket->recv_callback_ = recv_callback_;
-      ASSERT(addToEpollList(socket), "Unable to add socket. error:" + std::string(std::strerror(errno)));
+      ASSERT_MSG(addToEpollList(socket), "Unable to add socket. error:" + std::string(std::strerror(errno)));
 
       if (std::find(receive_sockets_.begin(), receive_sockets_.end(), socket) == receive_sockets_.end())
         receive_sockets_.push_back(socket);

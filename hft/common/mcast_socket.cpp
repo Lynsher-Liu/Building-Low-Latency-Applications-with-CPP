@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:34
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2025-12-05 16:55:57
+ * @FilePath: /my_HFT/hft/common/mcast_socket.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include "mcast_socket.h"
 
 namespace Common {
@@ -46,6 +54,6 @@ namespace Common {
   auto McastSocket::send(const void *data, size_t len) noexcept -> void {
     memcpy(outbound_data_.data() + next_send_valid_index_, data, len);
     next_send_valid_index_ += len;
-    ASSERT(next_send_valid_index_ < McastBufferSize, "Mcast socket buffer filled up and sendAndRecv() not called.");
+    ASSERT_MSG(next_send_valid_index_ < McastBufferSize, "Mcast socket buffer filled up and sendAndRecv() not called.");
   }
 }

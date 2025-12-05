@@ -133,7 +133,7 @@ private:
 
 public:
     // Resolver and socket require an io_context
-    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, string target) :
+    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, std::string target) :
         resolver_(net::make_strand(ioc)),
         ioc_(ioc),
         //stream_(net::make_strand(ioc), ssl_ctx_),
@@ -653,7 +653,7 @@ public:
 	
 	void start()
     {
-      m_publicSession = std::make_shared<WebSocketSession>(m_ioc, m_router, m_public_target);
+      m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target);
       m_publicSession->addTopic("books5", "BTC-USDT-SPOT");
       m_publicSession->addTopic("trades", "BTC-USDT-SPOT");
 	  m_publicSession->addTopic("bbo-tbt", "BTC-USDT-SPOT"); // only best bid/ask price size, 10ms, no depth structure

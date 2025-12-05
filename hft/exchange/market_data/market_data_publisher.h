@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:34
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2025-12-05 16:58:50
+ * @FilePath: /my_HFT/hft/exchange/market_data/market_data_publisher.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include <functional>
@@ -25,7 +33,7 @@ namespace Exchange {
     auto start() {
       run_ = true;
 
-      ASSERT(Common::createAndStartThread(-1, "Exchange/MarketDataPublisher", [this]() { run(); }) != nullptr, "Failed to start MarketData thread.");
+      ASSERT_MSG(Common::createAndStartThread(-1, "Exchange/MarketDataPublisher", [this]() { run(); }) != nullptr, "Failed to start MarketData thread.");
 
       snapshot_synthesizer_->start();
     }

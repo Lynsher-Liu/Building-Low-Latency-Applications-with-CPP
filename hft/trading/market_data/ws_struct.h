@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2025-12-04 16:14:58
+ * @LastEditTime: 2025-12-05 18:17:52
  * @FilePath: /my_HFT/Chapter10/trading/market_data/ws_struct.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -21,6 +21,7 @@
 #include <openssl/sha.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <openssl/buffer.h>
 #include <iomanip>
 #include <sstream>
 
@@ -89,7 +90,7 @@ namespace Common
 		RUNNING
 	}; //CONNECTED = 0, CONNECTING = 1, DISCONNECTED = 2
 
-	const char* state_name(WsConnectState s)
+	inline const char* state_name(WsConnectState s)
 	{
         switch(s)
 		{

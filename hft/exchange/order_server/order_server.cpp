@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:34
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2025-12-05 16:59:43
+ * @FilePath: /my_HFT/hft/exchange/order_server/order_server.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include "order_server.h"
 
 namespace Exchange {
@@ -24,7 +32,7 @@ namespace Exchange {
     run_ = true;
     tcp_server_.listen(iface_, port_);
 
-    ASSERT(Common::createAndStartThread(-1, "Exchange/OrderServer", [this]() { run(); }) != nullptr, "Failed to start OrderServer thread.");
+    ASSERT_MSG(Common::createAndStartThread(-1, "Exchange/OrderServer", [this]() { run(); }) != nullptr, "Failed to start OrderServer thread.");
   }
 
   auto OrderServer::stop() -> void {

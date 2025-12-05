@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:34
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2025-12-05 16:55:47
+ * @FilePath: /my_HFT/hft/common/mem_pool.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include <cstdint>
@@ -12,14 +20,14 @@ namespace Common {
   public:
     explicit MemPool(std::size_t num_elems) :
         store_(num_elems, {T(), true}) /* pre-allocation of vector storage. */ {
-      ASSERT(reinterpret_cast<const ObjectBlock *>(&(store_[0].object_)) == &(store_[0]), "T object should be first member of ObjectBlock.");
+      ASSERT_MSG(reinterpret_cast<const ObjectBlock *>(&(store_[0].object_)) == &(store_[0]), "T object should be first member of ObjectBlock.");
     }
 
     /// Allocate a new object of type T, use placement new to initialize the object, mark the block as in-use and return the object.
     template<typename... Args>
     T *allocate(Args... args) noexcept {
       auto obj_block = &(store_[next_free_index_]);
-      ASSERT(obj_block->is_free_, "Expected free ObjectBlock at index:" + std::to_string(next_free_index_));
+      ASSERT_MSG(obj_block->is_free_, "Expected free ObjectBlock at index:" + std::to_string(next_free_index_));
       T *ret = &(obj_block->object_);
       ret = new(ret) T(args...); // placement new.
       obj_block->is_free_ = false;
@@ -33,8 +41,8 @@ namespace Common {
     /// Destructor is not called for the object.
     auto deallocate(const T *elem) noexcept {
       const auto elem_index = (reinterpret_cast<const ObjectBlock *>(elem) - &store_[0]);
-      ASSERT(elem_index >= 0 && static_cast<size_t>(elem_index) < store_.size(), "Element being deallocated does not belong to this Memory pool.");
-      ASSERT(!store_[elem_index].is_free_, "Expected in-use ObjectBlock at index:" + std::to_string(elem_index));
+      ASSERT_MSG(elem_index >= 0 && static_cast<size_t>(elem_index) < store_.size(), "Element being deallocated does not belong to this Memory pool.");
+      ASSERT_MSG(!store_[elem_index].is_free_, "Expected in-use ObjectBlock at index:" + std::to_string(elem_index));
       store_[elem_index].is_free_ = true;
     }
 
@@ -59,7 +67,7 @@ namespace Common {
           next_free_index_ = 0;
         }
         if (UNLIKELY(initial_free_index == next_free_index_)) {
-          ASSERT(initial_free_index != next_free_index_, "Memory Pool out of space.");
+          ASSERT_MSG(initial_free_index != next_free_index_, "Memory Pool out of space.");
         }
       }
     }
