@@ -143,20 +143,38 @@ void AsyncWebsocketClient::handle_trades_BTC_USDT_SPOT(const json& msg)
 
 }
 
+/**
+ * balance_and_position用于初始同步
+ * 账户余额和持仓的完整快照（在登录后或断线重连时使用）。
+ * 订阅后立即推送一次完整状态，之后仅在余额或持仓有重大变化时推送。
+ *  初始化与校准的关键。避免本地与交易所状态不一致。
+ */
+void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
+{
+
+}
+
+/**
+ * 账户余额与可用保证金的更新
+ * 当账户余额、可用保证金、冻结金额等发生变化时推送
+ * 风控模块的核心，用于计算可用资金、保证金率、强平价
+ */
 void AsyncWebsocketClient::handle_account_update(const json& msg)
 {
 
 }
 
+/**
+ * 持仓详情 的更新（适用于币币、杠杆、合约等所有产品类型）
+ * 当持仓数量、持仓均价、未实现盈亏、强平价格等发生变化时推送
+ * 本地 position info 模块的唯一真相源
+ */
 void AsyncWebsocketClient::handle_positions_update(const json& msg)
 {
 
 }
 
-void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
-{
 
-}
 
 
 }

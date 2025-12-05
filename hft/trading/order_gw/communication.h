@@ -15,8 +15,7 @@
 #include <string>
 #include <json/json.hpp>
 #include <regex>
-#include "AsnLog.h"
-#include "utils.h"
+#include "common/AsnLog.h"
 
 using namespace std;
 using json = nlohmann::json;

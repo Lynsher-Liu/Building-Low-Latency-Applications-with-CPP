@@ -1,15 +1,6 @@
 
 #include "AsnLog.h"
 #include "communication.h"
-#include "utils.h"
-#include "mqtt.h"
-#include "globalConfig.h"
-#include "struct.h"
-#include "singlePlanner.h"
-#include "mapf.h"
-#include "ecbs/ECBS.h"
-#include "mapParser.h"
-#include "agv.h"
 
 using namespace std;
 static AsnLoggerPtr logger = ASN_GETLOGGER("planning.communication");

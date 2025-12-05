@@ -1,0 +1,30 @@
+[0;32mBuilding TRADING [0m
+-- Found Boost: /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/installed/lib/cmake/Boost-1.82.0/BoostConfig.cmake (found suitable version "1.82.0", minimum required is "1.51.0") found components: context filesystem program_options regex system thread 
+-- Found folly: /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/installed
+-- Found gflags from package config
+-- gflags_CONFIG=/usr/lib/x86_64-linux-gnu/cmake/gflags/gflags-config.cmake
+-- Found Boost: /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/installed/lib/cmake/Boost-1.82.0/BoostConfig.cmake (found version "1.82.0") found components: iostreams system context 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/build
+[0;32mFinish CMAKE configuration [0m
+[  4%] Building CXX object common/CMakeFiles/libcommon.dir/affinity.cpp.o
+[  4%] Building CXX object exchange/CMakeFiles/libexchange.dir/market_data/market_data_publisher.cpp.o
+[  9%] Building CXX object trading/CMakeFiles/libtrading.dir/market_data/market_data_consumer.cpp.o
+[  9%] Building CXX object trading/CMakeFiles/libtrading.dir/market_data/websocket.cpp.o
+[ 11%] Building CXX object common/CMakeFiles/libcommon.dir/AsnLog.cpp.o
+[ 13%] Building CXX object common/CMakeFiles/libcommon.dir/lf_queue_example.cpp.o
+[ 16%] Building CXX object common/CMakeFiles/libcommon.dir/logging_example.cpp.o
+[ 23%] Building CXX object trading/CMakeFiles/libtrading.dir/order_gw/communication.cpp.o
+[ 23%] Building CXX object exchange/CMakeFiles/libexchange.dir/market_data/snapshot_synthesizer.cpp.o
+[ 23%] Building CXX object exchange/CMakeFiles/libexchange.dir/matcher/matching_engine.cpp.o
+[ 25%] Building CXX object exchange/CMakeFiles/libexchange.dir/matcher/me_order.cpp.o
+[ 27%] Building CXX object common/CMakeFiles/libcommon.dir/mcast_socket.cpp.o
+[ 30%] Building CXX object exchange/CMakeFiles/libexchange.dir/matcher/me_order_book.cpp.o
+[ 32%] Building CXX object exchange/CMakeFiles/libexchange.dir/order_server/order_server.cpp.o
+[ 34%] Building CXX object common/CMakeFiles/libcommon.dir/mem_pool_example.cpp.o
+[ 37%] Building CXX object common/CMakeFiles/libcommon.dir/socket_example.cpp.o
+[ 39%] Linking CXX static library ../lib/liblibexchange.a
+/usr/bin/ar qc ../lib/liblibexchange.a CMakeFiles/libexchange.dir/market_data/market_data_publisher.cpp.o CMakeFiles/libexchange.dir/market_data/snapshot_synthesizer.cpp.o CMakeFiles/libexchange.dir/matcher/matching_engine.cpp.o CMakeFiles/libexchange.dir/matcher/me_order.cpp.o CMakeFiles/libexchange.dir/matcher/me_order_book.cpp.o CMakeFiles/libexchange.dir/order_server/order_server.cpp.o
+/usr/bin/ranlib ../lib/liblibexchange.a
+[ 39%] Built target libexchange

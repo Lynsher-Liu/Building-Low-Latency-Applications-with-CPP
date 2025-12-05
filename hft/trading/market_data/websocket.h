@@ -101,8 +101,6 @@ private:
     std::vector<WsRoute> routes;
 };
 
-
-
 // Sends a WebSocket message and prints the response
 class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
@@ -110,7 +108,7 @@ private:
     tcp::resolver resolver_;
     net::io_context& ioc_;
 	ssl::context ssl_ctx_{ssl::context::tls_client};
- 	ws::stream<ssl::stream<beast::tcp_stream>> stream_;
+ 	std::optional<ws::stream<ssl::stream<beast::tcp_stream> > > stream_;
 
     beast::flat_buffer inbuf_;
 	std::deque<std::string> outbox_;  
@@ -138,7 +136,7 @@ public:
     explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, string target) :
         resolver_(net::make_strand(ioc)),
         ioc_(ioc),
-        stream_(net::make_strand(ioc), ssl_ctx_),
+        //stream_(net::make_strand(ioc), ssl_ctx_),
 		ping_timer_(ioc),
         retry_timer_(ioc),
 		b_private_session_(b_private_session),
@@ -147,6 +145,11 @@ public:
     {
 		std::cout << "Start a new WebSocketSession\n";
 		m_topics.reserve(MAX_TOPIC_SIZE);
+
+        // 延迟构造
+        rebuild_stream();
+#if 0
+        stream_.emplace(net::make_strand(ioc), ssl_ctx_);
 
 		if(!SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host))
       		throw beast::system_error(beast::error_code(static_cast<int>(::ERR_get_error()),
@@ -163,6 +166,7 @@ public:
 				last_pong_ = std::chrono::steady_clock::now();
 			}
 		});
+#endif
     }
 
 	void addTopic(std::string channel, std::string instId)
@@ -173,22 +177,6 @@ public:
     // Start the asynchronous operation
     void run(char const* host, char const* port)
     {
-// put it in constructor
-#if 0 
-		// Set SNI Hostname (many hosts need this to handshake successfully)
-        if(! SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host))
-        {
-            beast::error_code ec{
-                static_cast<int>(::ERR_get_error()),
-                net::error::get_ssl_category()};
-            std::cerr << ec.message() << "\n";
-            return;
-        }
-
-        // Set the expected hostname in the peer certificate for verification
-        stream_.next_layer().set_verify_callback(ssl::host_name_verification(host));
-#endif
-
         // Save these for later
         host_ = host;
 		port_ = port;
@@ -209,12 +197,12 @@ public:
 		beast::error_code ec;
         ping_timer_.cancel(ec);
         retry_timer_.cancel(ec);
-        stream_.next_layer().next_layer().cancel();
+        stream_->next_layer().next_layer().cancel();
     	
-        net::post(stream_.get_executor(), [self = shared_from_this()]
+        net::post(stream_->get_executor(), [self = shared_from_this()]
 		{
 			beast::error_code ec;
-			self->stream_.close(ws::close_code::normal, ec);
+			self->stream_->close(ws::close_code::normal, ec);
 
 			if(ec)
             	return fail(ec, "close");
@@ -273,10 +261,10 @@ private:
 		std::cout << "enter on_resolve\n";
 
         // Set a timeout on the operation
-        beast::get_lowest_layer(stream_).expires_after(std::chrono::seconds(30));
+        beast::get_lowest_layer(*stream_).expires_after(std::chrono::seconds(30));
 
         // Make the connection on the IP address we get from a lookup
-        beast::get_lowest_layer(stream_).async_connect(
+        beast::get_lowest_layer(*stream_).async_connect(
             results,
             beast::bind_front_handler(
                 &WebSocketSession::on_connect,
@@ -299,7 +287,7 @@ private:
         //beast::get_lowest_layer(stream_).expires_never();
 
         // Perform the ssl handshake
-        stream_.next_layer().async_handshake(ssl::stream_base::client,
+        stream_->next_layer().async_handshake(ssl::stream_base::client,
             beast::bind_front_handler(
                 &WebSocketSession::on_ssl_handshake,
                 shared_from_this()));
@@ -313,15 +301,15 @@ private:
         set_state(WsConnectState::WS_HANDSHAKE);
 
         // Turn off the timeout on the tcp_stream, because the websocket stream has its own timeout system.
-        beast::get_lowest_layer(stream_).expires_never();
+        beast::get_lowest_layer(*stream_).expires_never();
 
         // Set suggested timeout settings for the websocket
-        stream_.set_option(
+        stream_->set_option(
             ws::stream_base::timeout::suggested(
                 beast::role_type::client));
 
         // Set a decorator to change the User-Agent of the handshake
-        stream_.set_option(ws::stream_base::decorator(
+        stream_->set_option(ws::stream_base::decorator(
             [](ws::request_type& req)
             {
                 req.set(http::field::user_agent,
@@ -330,7 +318,7 @@ private:
             }));
 
         // Perform the websocket handshake
-        stream_.async_handshake(host_, target_,
+        stream_->async_handshake(host_, target_,
             beast::bind_front_handler(
                 &WebSocketSession::on_handshake,
                 shared_from_this()));
@@ -360,7 +348,7 @@ private:
     }
 
 	void do_read() {
-		stream_.async_read(inbuf_,
+		stream_->async_read(inbuf_,
 		    beast::bind_front_handler(&WebSocketSession::on_read, shared_from_this()));
 	}
 
@@ -433,7 +421,7 @@ private:
 
 	void do_write() {
 		// 只要队列不空，就把队首拿出来写
-		stream_.async_write(net::buffer(outbox_.front()),
+		stream_->async_write(net::buffer(outbox_.front()),
 			beast::bind_front_handler(&WebSocketSession::on_write, shared_from_this()));
 	}
 
@@ -454,7 +442,7 @@ private:
 	// 线程安全：可在任何线程调用
 	void send(std::string msg) 
 	{
-		net::post(stream_.get_executor(),
+		net::post(stream_->get_executor(),
 		[self = shared_from_this(), m = std::move(msg)]() mutable 
 		{
 			std::cout << "add msg to send = " << m << "\n";
@@ -540,7 +528,7 @@ private:
 		{
             if(ec) return; // 可能是 cancel
             // 发 ping
-            self->stream_.ping({});
+            self->stream_->ping({});
             // 超时检测（10s 无 pong 认为断线）
             auto now = std::chrono::steady_clock::now();
             if(now - self->last_pong_ > 10s)
@@ -563,8 +551,8 @@ private:
         // 关闭与清理
         beast::error_code e2;
         ping_timer_.cancel(e2);
-        beast::get_lowest_layer(stream_).cancel();
-        stream_.close(ws::close_code::normal, e2); // 忽略错误
+        beast::get_lowest_layer(*stream_).cancel();
+        stream_->close(ws::close_code::normal, e2); // 忽略错误
 
         set_state(WsConnectState::DISCONNECTED);
 
@@ -587,23 +575,24 @@ private:
     void rebuild_stream()
 	{
         ssl_ctx_ = ssl::context(ssl::context::tls_client);
-        stream_. reset(ws::stream<ssl::stream<beast::tcp_stream>>(net::make_strand(ioc_), ssl_ctx_));
+        stream_.reset();
+        stream_.emplace(ws::stream<ssl::stream<beast::tcp_stream>>(net::make_strand(ioc_), ssl_ctx_));
 
         // SNI 重新设置
-        if(!SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host_.c_str()))
+        if(!SSL_set_tlsext_host_name(stream_->next_layer().native_handle(), host_.c_str()))
         {
             beast::error_code ec(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
             throw beast::system_error{ec};
         }
         // 控制帧回调重新设置
-        stream_.control_callback(
+        stream_->control_callback(
             [this](beast::websocket::frame_type kind, beast::string_view)
             {
                 if(kind == ws::frame_type::pong){
                     last_pong_ = std::chrono::steady_clock::now();
                 }
             });
-        stream_.text(true);
+        stream_->text(true);
         outbox_.clear();
         inbuf_.consume(inbuf_.size());
     }
@@ -622,7 +611,8 @@ private:
             if (line.empty() || line[0] == '#') continue;
             
             size_t pos = line.find('=');
-            if (pos != std::string::npos) {
+            if (pos != std::string::npos) 
+            {
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
                 
