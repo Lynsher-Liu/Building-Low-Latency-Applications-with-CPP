@@ -16,6 +16,7 @@
 #include <json/json.hpp>
 #include <regex>
 #include "common/AsnLog.h"
+#include "common/singleton.h"
 
 using namespace std;
 using json = nlohmann::json;
