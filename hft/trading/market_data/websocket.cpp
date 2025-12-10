@@ -94,16 +94,49 @@ void WsRouter::route_request(json msg)
         ]
     }
  */
-void AsyncWebsocketClient::handle_books5_BTC_USDT_SPOT(const json& msg)
+void AsyncWebsocketClient::handle_books5_BTC_USDT(const json& msg)
 {
-	std::cout << "enter handle_books5_BTC_USDT_SPOT, msg: " << msg << "\n";
+	std::cout << "enter handle_books5_BTC_USDT, msg: " << msg << "\n";
     //TODO: simply process then put into queue
 
 }
 
-void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT_SPOT(const json& msg)
+/**
+ * 1. **极速前沿更新**。延迟最低，专注于盘口最敏感部分
+ * 2. 提供买一、卖一数据
+ * 3. 首次推1档快照数据，以后定量推送，每10毫秒当1档快照数据有变化推送一次1档数据
+ * {
+    "arg": {
+        "channel": "bbo-tbt",
+        "instId": "BTC-USDT"
+    },
+    "data": [
+        {
+            "asks": [
+                [
+                    "91083.2",
+                    "0.01024577",
+                    "0",
+                    "1"
+                ]
+            ],
+            "bids": [
+                [
+                    "91082.4",
+                    "0.01010275",
+                    "0",
+                    "1"
+                ]
+            ],
+            "seqId": 173055617,
+            "ts": "1764947891649"
+        }
+    ]
+}
+ */
+void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT(const json& msg)
 {
-    std::cout << "enter handle_bbo_tbt_BTC_USDT_SPOT, msg: " << msg << "\n";
+    std::cout << "enter handle_bbo_tbt_BTC_USDT, msg: " << msg << "\n";
 }
 
 /**
@@ -136,9 +169,9 @@ void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT_SPOT(const json& msg)
         ]
     }
  */
-void AsyncWebsocketClient::handle_trades_BTC_USDT_SPOT(const json& msg)
+void AsyncWebsocketClient::handle_trades_BTC_USDT(const json& msg)
 {
-	std::cout << "enter handle_trades_BTC_USDT_SPOT, msg: " << msg << "\n";
+	std::cout << "enter handle_trades_BTC_USDT, msg: " << msg << "\n";
     //TODO: simply process then put into queue
 
 }

@@ -20,6 +20,7 @@
 #include "common/lf_queue.h"
 #include "common/macros.h"
 #include "common/mcast_socket.h"
+#include "common/AsnLog.h"
 
 #include "ws_struct.h"
 
@@ -34,7 +35,7 @@
 #include <boost/algorithm/string.hpp>
 #include <cstdlib>
 
-
+static AsnLoggerPtr loggerH = ASN_GETLOGGER("websocket_h");
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -147,26 +148,26 @@ public:
 		m_topics.reserve(MAX_TOPIC_SIZE);
 
         // 延迟构造
-        rebuild_stream();
-#if 0
+        //rebuild_stream();
+//#if 0
         stream_.emplace(net::make_strand(ioc), ssl_ctx_);
 
-		if(!SSL_set_tlsext_host_name(stream_.next_layer().native_handle(), host))
+		if(!SSL_set_tlsext_host_name(stream_->next_layer().native_handle(), host))
       		throw beast::system_error(beast::error_code(static_cast<int>(::ERR_get_error()),
                 net::error::get_ssl_category()));
         
         // Set the expected hostname in the peer certificate for verification
         //NextLayer表示WebSocket连接使用的下一层流类型，例如TCP套接字或TLS握手后的数据流
-        stream_.next_layer().set_verify_callback(ssl::host_name_verification(host));
+        stream_->next_layer().set_verify_callback(ssl::host_name_verification(host));
 		
 		// 控制帧：捕获 pong
-        stream_.control_callback(
+        stream_->control_callback(
 		[this](beast::websocket::frame_type kind, beast::string_view){
 			if(kind == ws::frame_type::pong){
 				last_pong_ = std::chrono::steady_clock::now();
 			}
 		});
-#endif
+//#endif
     }
 
 	void addTopic(std::string channel, std::string instId)
@@ -258,7 +259,6 @@ private:
             return reconnect("resolve", ec);
 
         set_state(WsConnectState::TCP_CONNECT);
-		std::cout << "enter on_resolve\n";
 
         // Set a timeout on the operation
         beast::get_lowest_layer(*stream_).expires_after(std::chrono::seconds(30));
@@ -277,7 +277,6 @@ private:
             return reconnect("connect", ec);
         
         set_state(WsConnectState::TLS_HANDSHAKE);
-		std::cout << "enter on_connect\n";
  
         // Update the host_ string. This will provide the value of the
         // Host HTTP header during the WebSocket handshake.
@@ -330,15 +329,14 @@ private:
 		    return reconnect("ws_handshake", ec);
 
         if(b_private_session_)
-            do_login();  // 登录后再订阅
-		
-		std::cout << "enter on_handshake\n";
-        set_state(WsConnectState::SUBSCRIBING);
-
-		// 1) 握手成功后先发订阅（例：OKX books5）
-		subscribePublicTopics();
-		//send(R"({"op":"subscribe","args":[{"channel":"books5","instId":"BTC-USDT-SWAP"}]})");
-		//send(R"({"op":"subscribe","args":[{"channel":"trades","instId":"BTC-USDT-SWAP"}]})");
+		{
+			do_login();  // 登录后再订阅
+		}           
+		else
+		{
+			set_state(WsConnectState::SUBSCRIBING);
+			subscribePublicTopics();
+		}       
 
 		// 2) 启动永久读循环
 		do_read();
@@ -369,12 +367,12 @@ private:
         if(content.is_discarded())
         {
             // 非 JSON 帧（或 pong），忽略
-            std::cout << "No json frame, maybe pong, ignore\n";
+            ASN_TRACE(loggerH, "No json frame, maybe pong, ignore");
         }
         else
         {
-            std::cout << "recv msg = " << content << "\n\n";
-            if(content.contains("event"))
+			ASN_TRACE(loggerH, "recv msg = " << content);
+            if (content.contains("event"))
             {
                 try
                 {
@@ -382,7 +380,7 @@ private:
                     if (ev == "login")
                     {
                         // {"event":"login","code":"0","msg":""}
-                        if(content["code"] == 0) on_login_ack_ok();
+                        if(content["code"] == "0") on_login_ack_ok();
                         else return reconnect("login-fail", beast::error_code{});
                     }
                     else if (ev=="subscribe")
@@ -429,7 +427,6 @@ private:
 		if (ec) 
 			return reconnect("write", ec);
 		
-		std::cout << "enter on_write\n";
 		boost::ignore_unused(bytes_transferred);
 		outbox_.pop_front();
 		
@@ -457,24 +454,41 @@ private:
     // ---- 登录（私有连接才需要）----
     void do_login()
     {
+		char cwd[1024];
+		std::string full_path;
+		if (getcwd(cwd, sizeof(cwd)) != nullptr) 
+		{			
+			// 检查文件是否存在
+			struct stat buffer;
+			full_path = std::string(cwd) + "/config/.env";
+			if (stat(full_path.c_str(), &buffer) != 0) [[unlikely]]
+			{
+				ASN_ERROR(loggerH, "Failed to find env path = " << full_path);
+				return;
+			}
+		}
+
         // 1. 加载 .env 文件（在程序最开始调用）
-        load_env_file(); // 默认就是找当前目录的 .env
+        load_env_file(std::move(full_path)); // 默认就是找当前目录的 .env
         
         // 2. 从环境变量中读取值
         const char* api_key_ptr = std::getenv("OKX_API_KEY");
         const char* passphrase_ptr = std::getenv("OKX_PASSPHRASE");
-        
+		const char* api_secretkey_ptr = std::getenv("OKX_SECRETKEY");
+
         // 3. 安全检查（必须做！）
-        if (!api_key_ptr || !passphrase_ptr) {
-            std::cerr << "错误: 无法从环境变量中读取完整的API凭证, 请检查 .env 文件是否存在且格式正确\n";
+        if (!api_key_ptr || !passphrase_ptr || !api_secretkey_ptr) [[unlikely]]
+		{
+            ASN_ERROR(loggerH,  "错误: 无法从环境变量中读取完整的API凭证, 请检查 .env 文件是否存在且格式正确\n");
             return; 
         }
         
         // 4. 转换成std::string（这样更安全方便）
         std::string api_key(api_key_ptr);
         std::string passphrase(passphrase_ptr);
+		std::string api_secretkey(api_secretkey_ptr);
         
-        auto authenticator = std::make_unique<WsAuthenticator>(api_key, passphrase);
+        auto authenticator = std::make_unique<WsAuthenticator>(api_key, passphrase, api_secretkey);
         auto msg = authenticator->build_login_message();
 
         send(msg);
@@ -597,7 +611,7 @@ private:
         inbuf_.consume(inbuf_.size());
     }
 
-    bool load_env_file(const std::string& path = ".env") 
+    bool load_env_file(std::string&& path) 
     {
         std::ifstream file(path);
         if (!file.is_open()) {
@@ -606,7 +620,8 @@ private:
         }
         
         std::string line;
-        while (std::getline(file, line)) {
+        while (std::getline(file, line)) 
+		{
             // 跳过空行和注释行
             if (line.empty() || line[0] == '#') continue;
             
@@ -615,7 +630,7 @@ private:
             {
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
-                
+
                 // 去除可能的首尾空格（更健壮的写法）
                 key.erase(0, key.find_first_not_of(" \t"));
                 key.erase(key.find_last_not_of(" \t") + 1);
@@ -643,9 +658,9 @@ public:
 		m_host(host),
 		m_port(port) 
 		{
-			m_router.register_route("^books5\\|BTC-USDT-SPOT$", [this](const json& msg) {handle_books5_BTC_USDT_SPOT(msg);});
-			m_router.register_route("^trades\\|BTC-USDT-SPOT$", [this](const json& msg) {handle_trades_BTC_USDT_SPOT(msg);});
-			m_router.register_route("^bbo-tbt\\|BTC-USDT-SPOT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT_SPOT(msg);});
+			m_router.register_route("^books5\\|BTC-USDT$", [this](const json& msg) {handle_books5_BTC_USDT(msg);});
+			m_router.register_route("^trades\\|BTC-USDT$", [this](const json& msg) {handle_trades_BTC_USDT(msg);});
+			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
 			// m_router.register_route("subscribe", [this](const json& msg) {handle_event_success(msg);});
 			// m_router.register_route("error", [this](const json& msg) {handle_event_error(msg);});
             // m_router.register_route("login", [this](const json& msg) {handle_event_login(msg);});
@@ -653,23 +668,25 @@ public:
 	
 	void start()
     {
-      m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target);
-      m_publicSession->addTopic("books5", "BTC-USDT-SPOT");
-      m_publicSession->addTopic("trades", "BTC-USDT-SPOT");
-	  m_publicSession->addTopic("bbo-tbt", "BTC-USDT-SPOT"); // only best bid/ask price size, 10ms, no depth structure
-	  //m_publicSession->addTopic("books-l2-tbt", "BTC-USDT-SWAP"); // multiple level price to fully reconstruct L2 orderbook
-      m_publicSession->run(m_host.c_str(), m_port.c_str());
+		m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target);
+		m_publicSession->addTopic("books5", "BTC-USDT");
+		m_publicSession->addTopic("trades", "BTC-USDT");
+		m_publicSession->addTopic("bbo-tbt", "BTC-USDT"); // only best bid/ask price size, 10ms, no depth structure
+		//m_publicSession->addTopic("books-l2-tbt", "BTC-USDT-SWAP"); // multiple level price to fully reconstruct L2 orderbook
+		//m_publicSession->run(m_host.c_str(), m_port.c_str());
 
-      m_privateSession->addTopic("books5", "BTC-USDT-SPOT");
+		m_privateSession = std::make_shared<WebSocketSession>(m_ioc, true, m_router, m_host.c_str(), m_public_target);
+		//m_privateSession->addTopic("books5", "BTC-USDT");
+		m_privateSession->run(m_host.c_str(), m_port.c_str());
 
-		m_ioc.run();
+	    m_ioc.run();
     }
 
 private:
     //public session callback
-    void handle_books5_BTC_USDT_SPOT(const json& msg);
-	void handle_trades_BTC_USDT_SPOT(const json& msg);
-	void handle_bbo_tbt_BTC_USDT_SPOT(const json& msg);
+    void handle_books5_BTC_USDT(const json& msg);
+	void handle_trades_BTC_USDT(const json& msg);
+	void handle_bbo_tbt_BTC_USDT(const json& msg);
 
     //private session callback
 	void handle_account_update(const json& msg);

@@ -67,6 +67,8 @@ set(LIB_INSTALL_DIR lib CACHE STRING
     "The subdirectory where libraries should be installed")
 set(CMAKE_INSTALL_DIR lib/cmake/ngc CACHE STRING
     "The subdirectory where CMake package config files should be installed")
+set(CONFIG_INSTALL_DIR config CACHE STRING
+    "The subdirectory where the configurations should be installed")
 
 set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE 1)
 # Try finding folly via its installed CMake configuration file.
@@ -161,6 +163,14 @@ target_link_libraries(trading_main PUBLIC ${LIBS}
 install(
   TARGETS trading_main
   DESTINATION bin/
+)
+
+install(
+   FILES 
+     config/config.json
+     config/trading.log.properties
+     config/.env
+   DESTINATION ${CONFIG_INSTALL_DIR}
 )
 
 # Install CMake package configuration files for wangle

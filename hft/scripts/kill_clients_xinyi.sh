@@ -1,1 +1,1 @@
-kill -9 $(pidof ../installed/bin/trading_main)
+kill -9 $(pidof bin/trading_main)

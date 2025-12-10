@@ -124,11 +124,15 @@ namespace Common
 	private:
 		std::string api_key_;
 		std::string passphrase_;
+		std::string secretkey_;
 		
 	public:
 		WsAuthenticator(const std::string& api_key,
-						const std::string& passphrase)
-			: api_key_(api_key), passphrase_(passphrase) {}		
+						const std::string& passphrase,
+						const std::string& secretkey)
+			: api_key_(api_key), 
+				passphrase_(passphrase),
+				secretkey_(secretkey) {}		
 		
 		// 生成HMAC SHA256签名并Base64编码
 		std::string generate_signature(const uint64_t& timestamp) 
@@ -141,7 +145,7 @@ namespace Common
 			unsigned int hash_len;
 			
 			HMAC(EVP_sha256(),
-				passphrase_.c_str(), static_cast<int>(passphrase_.length()),
+				secretkey_.c_str(), static_cast<int>(secretkey_.length()),
 				reinterpret_cast<const unsigned char*>(message.c_str()),
 				static_cast<int>(message.length()),
 				hash, &hash_len);
@@ -180,7 +184,7 @@ namespace Common
 				<< "\"apiKey\":\"" << api_key_ << "\","
 				<< "\"passphrase\":\"" << passphrase_ << "\","
 				<< "\"timestamp\":\"" << timestamp << "\","
-				<< "\"sig\":\"" << signature << "\""
+				<< "\"sign\":\"" << signature << "\""
 				<< "}]"
 				<< "}";
 			

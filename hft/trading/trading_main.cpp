@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
     FATAL("USAGE trading_main CLIENT_ID ALGO_TYPE [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...");
   }
 
+  ASN_INITLOG("./config/trading.log.properties");
+
   testWsclient();
   return 0;
 
