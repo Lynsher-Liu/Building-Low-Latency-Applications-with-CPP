@@ -66,3 +66,6 @@ installed/exec
 installed/lib
 installed/mapf
 installed/share
+installed/config/.env
+installed/trading.log*
+config/.env

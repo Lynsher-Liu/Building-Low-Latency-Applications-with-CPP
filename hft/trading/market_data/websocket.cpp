@@ -1,9 +1,10 @@
 #include "websocket.h"
 #include <regex>
 
-
 using json = nlohmann::json;
 using namespace std;
+
+static AsnLoggerPtr logger = ASN_GETLOGGER("websocket_cpp");
 namespace Trading 
 {
 
@@ -19,36 +20,35 @@ void WsRouter::register_route(string topic_regex,
 
 void WsRouter::route_request(json msg)
 {
-    for (auto& r : routes) 
-	{
-        // match mqtt msg topic with route regex
-        regex reg {r.topic_regex};
-        smatch match;
-
-        //{"arg":{"channel":"trades","instId":"BTC-USDT-SWAP"},"connId":"f5bee808","event":"subscribe"}
-        //{"arg":{"channel":"books5","instId":"BTC-USDT-SWAP"},"data":[{"asks":[["103259.9","885.31","0","2"],["103261.1","0.83","0","1"],["103261.3","0.02","0","2"],["103261.4","0.01","0","1"],["103262","19.28","0","2"]],"bids":[["103250","21871.09","0","2"],["103218.9","885.4","0","1"],["103217.1","1.95","0","1"],["103216.5","1.96","0","1"],["103215","0.05","0","1"]],"instId":"BTC-USDT-SWAP","ts":"1762700094902","seqId":178414521}]}
-        std::string channel = msg["arg"]["channel"];
-        std::string instId = msg["arg"]["instId"];
-
-        // handle events individually
-        if (msg.contains("event"))
+    try
+    {
+        for (auto& r : routes) 
         {
-            string event = msg["event"];
-            if (std::regex_search(event, match, reg)) 
+            // match mqtt msg topic with route regex
+            regex reg {r.topic_regex};
+            smatch match;
+
+            //{"arg":{"channel":"trades","instId":"BTC-USDT-SWAP"},"connId":"f5bee808","event":"subscribe"}
+            //{"arg":{"channel":"books5","instId":"BTC-USDT-SWAP"},"data":[{"asks":[["103259.9","885.31","0","2"],["103261.1","0.83","0","1"],["103261.3","0.02","0","2"],["103261.4","0.01","0","1"],["103262","19.28","0","2"]],"bids":[["103250","21871.09","0","2"],["103218.9","885.4","0","1"],["103217.1","1.95","0","1"],["103216.5","1.96","0","1"],["103215","0.05","0","1"]],"instId":"BTC-USDT-SWAP","ts":"1762700094902","seqId":178414521}]}
+            std::string channel = msg["arg"]["channel"];
+            std::string uid = channel;
+
+            // handle events individually
+            if (msg["arg"].contains("instId"))
             {
-                r.m_cb(msg);
-                break;
+                std::string instId = msg["arg"]["instId"];
+                uid += ("|" + instId);
             }
-        }
-		else if (msg.contains("data"))
-        {
-            std::string uid = channel + "|" + instId;
             if (std::regex_search(uid, match, reg)) 
             {
                 r.m_cb(msg);
                 break;
             }
         }
+    }
+    catch(const std::exception& e)
+    {
+        ASN_ERROR(logger, "Exception in handling json: " << e.what());
     }
 }
 
@@ -181,6 +181,36 @@ void AsyncWebsocketClient::handle_trades_BTC_USDT(const json& msg)
  * 账户余额和持仓的完整快照（在登录后或断线重连时使用）。
  * 订阅后立即推送一次完整状态，之后仅在余额或持仓有重大变化时推送。
  *  初始化与校准的关键。避免本地与交易所状态不一致。
+ * 
+ * {
+    "arg": {
+        "channel": "balance_and_position",
+        "uid": "447074731796078878"
+    },
+    "data": [
+        {
+            "balData": [
+                {
+                    "cashBal": "3",
+                    "ccy": "BTC",
+                    "uTime": "1684852904715"
+                },
+                {
+                    "cashBal": "30",
+                    "ccy": "LTC",
+                    "uTime": "1684852904759"
+                },...
+            ]
+            "eventType": "snapshot",
+            "pTime": "1765472158607",
+            "posData": [
+            ],
+            "trades": [
+
+            ]
+        }
+    ]
+}
  */
 void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
 {
@@ -191,6 +221,19 @@ void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
  * 账户余额与可用保证金的更新
  * 当账户余额、可用保证金、冻结金额等发生变化时推送
  * 风控模块的核心，用于计算可用资金、保证金率、强平价
+ * 
+ * {
+    "arg": {
+        "channel": "account",
+        "uid": "447074731796078878"
+    },
+    "curPage": 1,
+    "data": [
+        Object{...}
+    ],
+    "eventType": "snapshot",
+    "lastPage": true
+}
  */
 void AsyncWebsocketClient::handle_account_update(const json& msg)
 {
@@ -201,6 +244,20 @@ void AsyncWebsocketClient::handle_account_update(const json& msg)
  * 持仓详情 的更新（适用于币币、杠杆、合约等所有产品类型）
  * 当持仓数量、持仓均价、未实现盈亏、强平价格等发生变化时推送
  * 本地 position info 模块的唯一真相源
+ * 
+ * {
+    "arg": {
+        "channel": "positions",
+        "instType": "ANY",
+        "uid": "447074731796078878"
+    },
+    "curPage": 1,
+    "data": [
+
+    ],
+    "eventType": "snapshot",
+    "lastPage": true
+}
  */
 void AsyncWebsocketClient::handle_positions_update(const json& msg)
 {

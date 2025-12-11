@@ -170,9 +170,16 @@ public:
 //#endif
     }
 
-	void addTopic(std::string channel, std::string instId)
+	void addTopic(json&& args) //std::string channel, std::string instId
 	{
-		m_topics.emplace_back(WsTopic{channel, instId, WsTopicStatus::PENDING});
+		std::unordered_map<std::string, std::string> map;
+		for (auto& [key, value] : args.items()) 
+		{
+			std::cout << "Key: " << key << ", Value: " << value << std::endl;
+			ASN_TRACE(loggerH, "add topic key = " << key << ", value = " << value);
+			map[key] = value;
+		}	
+		m_topics.emplace_back(WsTopic{map, WsTopicStatus::PENDING});
 	}
 
     // Start the asynchronous operation
@@ -235,14 +242,25 @@ public:
     void subscribePrivateTopics()
 	{		
         //TODO:  temporal fix the topics here, revise later
-        std::string private_msg = R"({
-            "op": "subscribe",
-            "args": [
-                {"channel": "account", "extraParams": "{\"updateInterval\": \"0\"}},
-                {"channel": "positions", "instType": "ANY", "extraParams": "{\"updateInterval\": \"0\"}},
-                {"channel": "balance_and_position"}
-            ]
-        })";
+		json subscribe_msg = {
+			{"op", "subscribe"},
+			{"args", json::array({
+				{
+					{"channel", "account"},
+					{"extraParams", "{\"updateInterval\":\"0\"}"}
+				},
+				{
+					{"channel", "positions"},
+					{"instType", "ANY"},
+					{"extraParams", "{\"updateInterval\":\"0\"}"}
+				},
+				{
+					{"channel", "balance_and_position"}
+				}
+			})}
+		};
+
+		std::string private_msg = subscribe_msg.dump();
         send(private_msg);
 	}
 
@@ -387,7 +405,7 @@ private:
                     {
                         // {"event":"subscribe","arg":{"channel":"books5","instId":"BTC-USDT-SWAP"}}
                         auto& arg = content["arg"];
-                        on_subscribe_ack_ok(arg["channel"], arg["instId"]);
+                        on_subscribe_ack_ok(std::move(arg));
                     }
                     else if (ev == "error")
                     {
@@ -401,10 +419,14 @@ private:
                         // receive notice event from OKX, 用户会在如下场景收到此类信息：Websocket服务升级断线. 在推送服务升级前60秒会推送信息，用户可以重新建立新的连接避免由于断线造成的影响。
                         return reconnect("server-notice-event", beast::error_code{});
                     }
+					else if (ev == "channel-conn-count")
+					{
+						// do nothing
+					}
                 }
                 catch(const std::exception& e)
                 {
-                    std::cerr << e.what() << '\n';
+					ASN_ERROR(loggerH, "Exception in handling json: " << e.what());
                 }                          
             }
             else if(content.contains("arg") && content.contains("data"))
@@ -442,7 +464,7 @@ private:
 		net::post(stream_->get_executor(),
 		[self = shared_from_this(), m = std::move(msg)]() mutable 
 		{
-			std::cout << "add msg to send = " << m << "\n";
+			//std::cout << "add msg to send = " << m << "\n";
 			self->outbox_.emplace_back(std::move(m));
 			if (self->outbox_.size() == 1) 
 			{
@@ -498,19 +520,28 @@ private:
     void on_login_ack_ok()
     {
         set_state(WsConnectState::SUBSCRIBING);
-        subscribePrivateTopics();
+        subscribePublicTopics();
     }
 
-    void on_subscribe_ack_ok(const std::string& channel, const std::string& instId)
+	/**
+	 * {"arg":{"channel":"account"},"connId":"27a856ec","event":"subscribe"}
+	 */
+    void on_subscribe_ack_ok(json&& args)
     {
         for (auto& topic : m_topics)
         {
-            if(topic.m_channel==channel && topic.m_instId==instId)
-            {
-                topic.m_status = WsTopicStatus::OK;
-                break;
-            }
+			for (const auto& [key, value] : topic.args)
+			{
+				if(args.contains(key) && args[key] != value) // arg not euqal
+				{		
+					ASN_TRACE(loggerH, "args[" << key << "] = " << args[key] 
+						<< ", differ from value in topic: " << value << ", break");			
+					break;
+				}
+			}
+			topic.m_status = WsTopicStatus::OK;            
         }
+
         // 订阅都 OK 就进入 RUNNING
         bool all_ok = true;
         for(const auto& topic : m_topics)
@@ -661,22 +692,27 @@ public:
 			m_router.register_route("^books5\\|BTC-USDT$", [this](const json& msg) {handle_books5_BTC_USDT(msg);});
 			m_router.register_route("^trades\\|BTC-USDT$", [this](const json& msg) {handle_trades_BTC_USDT(msg);});
 			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
-			// m_router.register_route("subscribe", [this](const json& msg) {handle_event_success(msg);});
-			// m_router.register_route("error", [this](const json& msg) {handle_event_error(msg);});
-            // m_router.register_route("login", [this](const json& msg) {handle_event_login(msg);});
+			
+			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
+			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
+			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
 		}
 	
 	void start()
     {
 		m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target);
-		m_publicSession->addTopic("books5", "BTC-USDT");
-		m_publicSession->addTopic("trades", "BTC-USDT");
-		m_publicSession->addTopic("bbo-tbt", "BTC-USDT"); // only best bid/ask price size, 10ms, no depth structure
-		//m_publicSession->addTopic("books-l2-tbt", "BTC-USDT-SWAP"); // multiple level price to fully reconstruct L2 orderbook
-		//m_publicSession->run(m_host.c_str(), m_port.c_str());
+		m_publicSession->addTopic({{"channel", "books5"}, {"instId", "BTC-USDT"}});
+		m_publicSession->addTopic({{"channel", "trades"}, {"instId", "BTC-USDT"}});
+		m_publicSession->addTopic({{"channel", "bbo-tbt"}, {"instId", "BTC-USDT"}}); // only best bid/ask price size, 10ms, no depth structure
+		m_publicSession->run(m_host.c_str(), m_port.c_str());
 
-		m_privateSession = std::make_shared<WebSocketSession>(m_ioc, true, m_router, m_host.c_str(), m_public_target);
-		//m_privateSession->addTopic("books5", "BTC-USDT");
+		m_privateSession = std::make_shared<WebSocketSession>(m_ioc, true, m_router, m_host.c_str(), m_private_target);
+		m_privateSession->addTopic({{"channel", "account"},
+					{"extraParams", "{\"updateInterval\":\"0\"}"}});
+		m_privateSession->addTopic({{"channel", "positions"},
+					{"instType", "ANY"},
+					{"extraParams", "{\"updateInterval\":\"0\"}"}});
+		m_privateSession->addTopic({{"channel", "balance_and_position"}});
 		m_privateSession->run(m_host.c_str(), m_port.c_str());
 
 	    m_ioc.run();

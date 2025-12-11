@@ -12,6 +12,7 @@
 #include <limits>
 #include <sstream>
 #include <array>
+#include <unordered_map>
 
 #include "common/macros.h"
 #include "common/timer.h"
@@ -57,8 +58,9 @@ namespace Common
 
 	struct WsTopic 
 	{		
-		std::string m_channel;
-		std::string m_instId;
+		//std::string m_channel;
+		//std::string m_instId;
+		std::unordered_map<std::string, std::string> args;
 		WsTopicStatus m_status{WsTopicStatus::PENDING};
 
 		auto toSubscribeStr() const 
@@ -71,8 +73,12 @@ namespace Common
 
 			topicJson["op"] = "subscribe";
 			json arg;
-			arg["channel"] = m_channel;
-			arg["instId"] = m_instId;
+			for (const auto& [key, value] : args)
+			{
+				arg[key] = value;
+			}
+			//arg["channel"] = m_channel;
+			//arg["instId"] = m_instId;
 			topicJson["args"].push_back(arg);
 
 			return topicJson.dump();
