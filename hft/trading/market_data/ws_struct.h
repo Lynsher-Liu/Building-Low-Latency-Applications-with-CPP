@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2025-12-05 18:17:52
+ * @LastEditTime: 2025-12-15 11:34:47
  * @FilePath: /my_HFT/Chapter10/trading/market_data/ws_struct.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -84,6 +84,16 @@ namespace Common
 			return topicJson.dump();
 		}
 	};
+
+	inline std::ostream& operator<<(std::ostream& os, const WsTopic& topic)
+	{
+		os << "topic:\n";
+		for (const auto& [key, value] : topic.args)
+		{
+			os << key << " = " << value << ",\n";
+		}
+		return os;
+	}
 
 	enum WsConnectState {
 		DISCONNECTED,
@@ -182,7 +192,6 @@ namespace Common
 			auto timestamp = clock->getUnixEpochTime();
 			std::string signature = generate_signature(timestamp);
 			
-			// 构建JSON格式的登录消息
 			std::ostringstream oss;
 			oss << "{"
 				<< "\"op\":\"login\","

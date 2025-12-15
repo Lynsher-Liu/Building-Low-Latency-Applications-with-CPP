@@ -175,8 +175,7 @@ public:
 		std::unordered_map<std::string, std::string> map;
 		for (auto& [key, value] : args.items()) 
 		{
-			std::cout << "Key: " << key << ", Value: " << value << std::endl;
-			ASN_TRACE(loggerH, "add topic key = " << key << ", value = " << value);
+			//ASN_TRACE(loggerH, "add topic key = " << key << ", value = " << value);
 			map[key] = value;
 		}	
 		m_topics.emplace_back(WsTopic{map, WsTopicStatus::PENDING});
@@ -389,7 +388,7 @@ private:
         }
         else
         {
-			ASN_TRACE(loggerH, "recv msg = " << content);
+			//ASN_TRACE(loggerH, "recv msg = " << content);
             if (content.contains("event"))
             {
                 try
@@ -409,18 +408,19 @@ private:
                     }
                     else if (ev == "error")
                     {
-                        std::cerr << "[ERR] " << content.dump()<<"\n";
+                        ASN_ERROR(loggerH, "recv error msg = " << content.dump() << "\n");
                         // 订阅出错可选择只重发该订阅；此处简单化处理为重连
                         return reconnect("server-error-event", beast::error_code{});
                     }
                     else if (ev == "notice")
                     {
-                        std::cerr << "OKX notice: " << content.dump()<<"\n";
+                        ASN_ERROR(loggerH, "recv OKX notice = " << content.dump() << "\n");
                         // receive notice event from OKX, 用户会在如下场景收到此类信息：Websocket服务升级断线. 在推送服务升级前60秒会推送信息，用户可以重新建立新的连接避免由于断线造成的影响。
                         return reconnect("server-notice-event", beast::error_code{});
                     }
 					else if (ev == "channel-conn-count")
 					{
+                        ASN_TRACE(loggerH, "recv channel-conn-count msg = " << content.dump() << "\n");
 						// do nothing
 					}
                 }
@@ -533,12 +533,11 @@ private:
 			for (const auto& [key, value] : topic.args)
 			{
 				if(args.contains(key) && args[key] != value) // arg not euqal
-				{		
-					ASN_TRACE(loggerH, "args[" << key << "] = " << args[key] 
-						<< ", differ from value in topic: " << value << ", break");			
+				{				
 					break;
 				}
 			}
+            ASN_TRACE(loggerH, "set " << topic << ", status = OK\n");
 			topic.m_status = WsTopicStatus::OK;            
         }
 
