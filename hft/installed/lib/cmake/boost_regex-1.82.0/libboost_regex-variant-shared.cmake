@@ -9,7 +9,7 @@ endif()
 
 # layout=system
 
-# toolset=gcc13
+# toolset=gcc15
 
 # link=shared
 

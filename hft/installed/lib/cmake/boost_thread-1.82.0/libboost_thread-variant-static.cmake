@@ -9,7 +9,7 @@ endif()
 
 # layout=system
 
-# toolset=gcc13
+# toolset=gcc15
 
 # link=static
 
@@ -83,4 +83,4 @@ set_target_properties(Boost::thread PROPERTIES
   MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release
   )
 
-list(APPEND _BOOST_THREAD_DEPS atomic headers)
+list(APPEND _BOOST_THREAD_DEPS headers)

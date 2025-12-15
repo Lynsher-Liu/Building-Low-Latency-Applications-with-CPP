@@ -9,7 +9,7 @@ endif()
 
 # layout=system
 
-# toolset=gcc13
+# toolset=gcc15
 
 # link=static
 
@@ -87,8 +87,8 @@ list(APPEND _BOOST_IOSTREAMS_DEPS headers)
 
 if(CMAKE_CONFIGURATION_TYPES)
   set_property(TARGET Boost::iostreams APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-    "$<$<CONFIG:release>:lzma;z>")
+    "$<$<CONFIG:release>:bz2;lzma;z;zstd>")
 else()
   set_property(TARGET Boost::iostreams APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-    lzma z)
+    bz2 lzma z zstd)
 endif()

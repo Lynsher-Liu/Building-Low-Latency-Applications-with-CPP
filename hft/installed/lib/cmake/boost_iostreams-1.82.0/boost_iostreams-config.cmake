@@ -15,10 +15,10 @@ mark_as_advanced(boost_iostreams_DIR)
 get_filename_component(_BOOST_CMAKEDIR "${CMAKE_CURRENT_LIST_DIR}/../" REALPATH)
 
 # If the computed and the original directories are symlink-equivalent, use original
-if(EXISTS "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/installed/lib/cmake")
-  get_filename_component(_BOOST_CMAKEDIR_ORIGINAL "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/installed/lib/cmake" REALPATH)
+if(EXISTS "/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed/lib/cmake")
+  get_filename_component(_BOOST_CMAKEDIR_ORIGINAL "/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed/lib/cmake" REALPATH)
   if(_BOOST_CMAKEDIR STREQUAL _BOOST_CMAKEDIR_ORIGINAL)
-    set(_BOOST_CMAKEDIR "/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/installed/lib/cmake")
+    set(_BOOST_CMAKEDIR "/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed/lib/cmake")
   endif()
   unset(_BOOST_CMAKEDIR_ORIGINAL)
 endif()

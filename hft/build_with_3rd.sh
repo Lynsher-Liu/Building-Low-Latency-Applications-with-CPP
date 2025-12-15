@@ -596,6 +596,9 @@ while [ "$1" != "" ]; do
     -folly )
       BUILD_COMPONENTS="folly"
       ;;
+    -log4cplus )
+      BUILD_COMPONENTS="log4cplus"
+      ;;
 	 -c | --clean )
       NEED_CLEAN=true
       ;;

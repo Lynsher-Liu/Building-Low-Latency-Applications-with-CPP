@@ -12,8 +12,8 @@ set_target_properties(log4cplus::log4cplus PROPERTIES
   IMPORTED_SONAME_NOCONFIG "liblog4cplus.so.3"
   )
 
-list(APPEND _IMPORT_CHECK_TARGETS log4cplus::log4cplus )
-list(APPEND _IMPORT_CHECK_FILES_FOR_log4cplus::log4cplus "${_IMPORT_PREFIX}/lib/liblog4cplus.so.3" )
+list(APPEND _cmake_import_check_targets log4cplus::log4cplus )
+list(APPEND _cmake_import_check_files_for_log4cplus::log4cplus "${_IMPORT_PREFIX}/lib/liblog4cplus.so.3" )
 
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)
