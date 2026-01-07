@@ -112,7 +112,7 @@ void AsyncWebsocketClient::handle_books5_BTC_USDT(const json& msg)
     },
     "data": [
         {
-            "asks": [
+            "asks": [ //["价格", "总量", "档位", "order数量"]
                 [
                     "91083.2",
                     "0.01024577",

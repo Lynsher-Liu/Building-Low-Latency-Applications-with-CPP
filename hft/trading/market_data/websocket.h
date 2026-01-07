@@ -19,7 +19,7 @@
 #include "common/thread_utils.h"
 #include "common/lf_queue.h"
 #include "common/macros.h"
-#include "common/mcast_socket.h"
+//#include "common/mcast_socket.h"
 #include "common/AsnLog.h"
 
 #include "ws_struct.h"
@@ -696,8 +696,28 @@ public:
 			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
 			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
 		}
+    
+    ~AsyncWebsocketClient() 
+    {
+      stop();
+
+      using namespace std::literals::chrono_literals;
+      std::this_thread::sleep_for(5s);
+    }
 	
-	void start()
+    /// Start and stop the market data consumer main thread.
+    auto start() 
+    {
+      m_stop.store(false);
+      m_worker_thread = Common::createAndStartThread(-1, "Trading/MarketDataConsumer", [this]() { run(); });
+      //ASSERT_MSG(Common::createAndStartThread(-1, "Trading/MarketDataConsumer", [this]() { run(); }) != nullptr, "Failed to start MarketData thread.");
+    }
+
+    auto stop() -> void {
+      m_stop.store(true);
+    }
+
+	void run()
     {
 		m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target);
 		m_publicSession->addTopic({{"channel", "books5"}, {"instId", "BTC-USDT"}});
@@ -742,6 +762,10 @@ private:
     std::string m_private_target{"/ws/v5/private?brokerId=9999"};
 
 	WsRouter m_router;
+
+private:
+    std::thread m_worker_thread;
+    std::atomic_bool m_stop{false};
 };
 
 

@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <json/json.hpp>
+#include <deque>
 
 #include "concurrentqueue/concurrentqueue.h"
 #include <folly/concurrency/ConcurrentHashMap.h>
@@ -27,6 +28,7 @@
 #include "common/mcast_socket.h"
 
 #include "exchange/market_data/market_update.h"
+#include "websocket.h"
 
 using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;

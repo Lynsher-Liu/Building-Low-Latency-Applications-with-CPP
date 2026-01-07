@@ -1,3 +1,4 @@
+#include "common/AsnLog.h"
 #include "market_data_consumer.h"
 
 namespace Trading {
@@ -21,7 +22,7 @@ namespace Trading {
            "Join failed on:" + std::to_string(incremental_mcast_socket_.socket_fd_) + " error:" + std::string(std::strerror(errno)));
 
     snapshot_mcast_socket_.recv_callback_ = recv_callback;
-  }
+      }
 
   /// Main loop for this thread - reads and processes messages from the multicast sockets - the heavy lifting is in the recvCallback() and checkSnapshotSync() methods.
   auto MarketDataConsumer::run() noexcept -> void {
