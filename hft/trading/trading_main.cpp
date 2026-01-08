@@ -6,6 +6,9 @@
 #include "market_data/websocket.h"
 
 #include "common/logging.h"
+#include "common/affinity.h"
+
+static AsnLoggerPtr logger_main = ASN_GETLOGGER("trading_main");
 
 /// Main components.
 Common::Logger *logger = nullptr;
@@ -13,21 +16,42 @@ Trading::TradeEngine *trade_engine = nullptr;
 Trading::MarketDataConsumer *market_data_consumer = nullptr;
 Trading::OrderGateway *order_gateway = nullptr;
 
-void testWsclient()
+
+int main(int argc, char **argv) 
 {
-	Trading::AsyncWebsocketClient* wsclient = new Trading::AsyncWebsocketClient("wspap.okx.com", "8443");
+	if(argc < 2) {
+		//FATAL("USAGE trading_main CLIENT_ID ALGO_TYPE [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...");
+	}
+
+	ASN_INITLOG("./config/trading.log.properties");
+
+	boost::asio::io_context ioc;
+	//const int bindToNumaNode = affinity::get_least_loaded_numa_node();
+
+	Trading::AsyncWebsocketClient* wsclient = new Trading::AsyncWebsocketClient(ioc, "wspap.okx.com", "8443"); // bindToNumaNode
 	wsclient->start();
-}
 
-/// ./trading_main CLIENT_ID ALGO_TYPE [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...
-int main(int argc, char **argv) {
-  if(argc < 3) {
-    FATAL("USAGE trading_main CLIENT_ID ALGO_TYPE [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...");
-  }
+	boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
+	signals.async_wait([&ioc, wsclient](const boost::system::error_code&, int) 
+	{
+		ASN_INFO(logger_main,  "---------------------------------------------------------");
+		ASN_INFO(logger_main,  "-------------------------Stop main-----------------------");
+		ASN_INFO(logger_main,  "---------------------------------------------------------\n\n\n\n");
+		
+		wsclient->stop();  // 优雅停止客户端
+		ioc.stop();      // 停止事件循环
 
-  ASN_INITLOG("./config/trading.log.properties");
+		using namespace std::literals::chrono_literals;
+		std::this_thread::sleep_for(3s);
+	});
 
-  testWsclient();
+  	ASN_INFO(logger_main,  "------------------------------------------------------------------");
+	ASN_INFO(logger_main,  "------------------IO event loop runs, block here------------------");
+	ASN_INFO(logger_main,  "------------------------------------------------------------------\n\n\n\n");
+  
+  ioc.run(); // block here until m_ioc stops
+  ASN_INFO(logger_main, "IO event loop stopped successfully");
+
   return 0;
 
   const Common::ClientId client_id = atoi(argv[1]);

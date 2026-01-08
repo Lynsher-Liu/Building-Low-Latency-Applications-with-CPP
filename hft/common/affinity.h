@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-03-20 09:58:50
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2025-03-26 16:15:29
+ * @LastEditTime: 2026-01-08 18:54:38
  * @FilePath: /path_planning_service/src/mapf/affinity.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -62,7 +62,7 @@ public:
         allocator(&pool) {}
 
     template <typename T, typename ... Args>
-    shared_ptr<T> produceSharedPtr(Args&& ... args) noexcept
+    std::shared_ptr<T> produceSharedPtr(Args&& ... args) noexcept
     {
         return std::allocate_shared<T>(allocator, std::forward<Args>(args)...); 
     }
@@ -77,8 +77,39 @@ private:
     std::pmr::polymorphic_allocator<std::byte> allocator;
 };
 
-void bindThreadToNumaCPU(int numa_node);
-int get_least_loaded_numa_node();
+
+#if 0
+// only intialize cached_node one time
+inline int get_least_loaded_numa_node() 
+{
+    static int cached_node = [](){
+        int num_nodes = numa_max_node() + 1;
+        std::vector<int> node_load(num_nodes, 0);
+
+        cpu_set_t cpu_set;
+        sched_getaffinity(0, sizeof(cpu_set_t), &cpu_set);
+
+        for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+            if (CPU_ISSET(cpu, &cpu_set)) {
+                int node = numa_node_of_cpu(cpu);
+                node_load[node]++;  // 统计每个 NUMA node 的 CPU 负载
+            }
+        }
+
+        // 选择负载最轻的 NUMA node
+        int min_load = node_load[0];
+        int best_node = 0;
+        for (int i = 1; i < num_nodes; ++i) {
+            if (node_load[i] < min_load) {
+                min_load = node_load[i];
+                best_node = i;
+            }
+        }
+        return best_node;
+    }();
+    return cached_node;
+}
+#endif
 
 } //namespace affinity
 

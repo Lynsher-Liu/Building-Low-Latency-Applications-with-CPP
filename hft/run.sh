@@ -1,4 +1,12 @@
 #!/bin/bash
+###
+ # @Author: Lynsher xinyiliu@astri.org
+ # @Date: 2025-12-15 10:10:36
+ # @LastEditors: Lynsher xinyiliu@astri.org
+ # @LastEditTime: 2026-01-08 14:19:53
+ # @FilePath: /my_HFT/hft/run.sh
+ # @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+### 
 
 # ./trading_main CLIENT_ID ALGO_TYPE [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...
 
@@ -28,5 +36,3 @@ cd installed/
 ulimit -c unlimited
 bin/trading_main 5 RANDOM &
 tail -f /dev/null
-
-#./installed/bin/trading_main  5 RANDOM &

@@ -19,7 +19,7 @@
 #include "common/thread_utils.h"
 #include "common/lf_queue.h"
 #include "common/macros.h"
-//#include "common/mcast_socket.h"
+#include "common/mcast_socket.h"
 #include "common/AsnLog.h"
 
 #include "ws_struct.h"
@@ -144,12 +144,10 @@ public:
 		target_(target),
 		m_router(router)
     {
-		std::cout << "Start a new WebSocketSession\n";
+		ASN_DEBUG(loggerH, "Start a new WebSocketSession");
 		m_topics.reserve(MAX_TOPIC_SIZE);
 
         // 延迟构造
-        //rebuild_stream();
-//#if 0
         stream_.emplace(net::make_strand(ioc), ssl_ctx_);
 
 		if(!SSL_set_tlsext_host_name(stream_->next_layer().native_handle(), host))
@@ -167,7 +165,6 @@ public:
 				last_pong_ = std::chrono::steady_clock::now();
 			}
 		});
-//#endif
     }
 
 	void addTopic(json&& args) //std::string channel, std::string instId
@@ -238,36 +235,11 @@ public:
 		}
 	}
 
-    void subscribePrivateTopics()
-	{		
-        //TODO:  temporal fix the topics here, revise later
-		json subscribe_msg = {
-			{"op", "subscribe"},
-			{"args", json::array({
-				{
-					{"channel", "account"},
-					{"extraParams", "{\"updateInterval\":\"0\"}"}
-				},
-				{
-					{"channel", "positions"},
-					{"instType", "ANY"},
-					{"extraParams", "{\"updateInterval\":\"0\"}"}
-				},
-				{
-					{"channel", "balance_and_position"}
-				}
-			})}
-		};
-
-		std::string private_msg = subscribe_msg.dump();
-        send(private_msg);
-	}
-
 private:
     void set_state(WsConnectState s)
     {
         m_state = s;
-        std::cout << "[STATE] -> " << state_name(s) << "\n";
+		ASN_DEBUG(loggerH, "[STATE] -> " << state_name(s));
     }
 
     void on_resolve(beast::error_code ec, tcp::resolver::results_type results)
@@ -532,12 +504,12 @@ private:
         {
 			for (const auto& [key, value] : topic.args)
 			{
-				if(args.contains(key) && args[key] != value) // arg not euqal
+				if(args.contains(key) && args[key] != value) // arg value not euqal
 				{				
 					break;
 				}
 			}
-            ASN_TRACE(loggerH, "set " << topic << ", status = OK\n");
+            //ASN_TRACE(loggerH, "set " << topic << ", status = OK");
 			topic.m_status = WsTopicStatus::OK;            
         }
 
@@ -684,37 +656,53 @@ private:
 class AsyncWebsocketClient
 {
 public:
-	explicit AsyncWebsocketClient(std::string host, std::string port) :
+	explicit AsyncWebsocketClient(net::io_context& ioc, std::string host, std::string port, int numaNode = 0) :
+		m_ioc(ioc),
 		m_host(host),
-		m_port(port) 
+		m_port(port),
+		bindToNumaNode(numaNode)
 		{
 			m_router.register_route("^books5\\|BTC-USDT$", [this](const json& msg) {handle_books5_BTC_USDT(msg);});
 			m_router.register_route("^trades\\|BTC-USDT$", [this](const json& msg) {handle_trades_BTC_USDT(msg);});
 			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
 			
-			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
-			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
-			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
+			m_router.register_route("account", [this](const json& msg) {handle_account_update(msg);});
+			m_router.register_route("positions", [this](const json& msg) {handle_positions_update(msg);});
+			m_router.register_route("balance_and_position", [this](const json& msg) {handle_balance_and_position_update(msg);});
 		}
     
     ~AsyncWebsocketClient() 
     {
-      stop();
+		stop();
 
-      using namespace std::literals::chrono_literals;
-      std::this_thread::sleep_for(5s);
+		using namespace std::literals::chrono_literals;
+		std::this_thread::sleep_for(5s);
     }
 	
     /// Start and stop the market data consumer main thread.
     auto start() 
     {
-      m_stop.store(false);
-      m_worker_thread = Common::createAndStartThread(-1, "Trading/MarketDataConsumer", [this]() { run(); });
-      //ASSERT_MSG(Common::createAndStartThread(-1, "Trading/MarketDataConsumer", [this]() { run(); }) != nullptr, "Failed to start MarketData thread.");
+		m_stop.store(false);
+		m_worker_thread = Common::createAndStartThread(bindToNumaNode, "Trading/websocket", [this]() { run(); });
+		if (!m_worker_thread)
+			ASN_ERROR(loggerH, "Failed to start websocket thread");
     }
 
-    auto stop() -> void {
-      m_stop.store(true);
+    auto stop() -> void 
+	{
+		m_stop.store(true);
+		if (m_publicSession)
+			m_publicSession->close();
+		if (m_privateSession)
+			m_privateSession->close();
+		
+		// 给一点时间让会话优雅关闭（可选）
+        std::this_thread::sleep_for(100ms);
+
+		//m_ioc.stop();
+
+		if (m_worker_thread && m_worker_thread->joinable())
+			m_worker_thread->join();
     }
 
 	void run()
@@ -734,7 +722,7 @@ public:
 		m_privateSession->addTopic({{"channel", "balance_and_position"}});
 		m_privateSession->run(m_host.c_str(), m_port.c_str());
 
-	    m_ioc.run();
+	    // m_ioc.run(); // block here until m_ioc stops
     }
 
 private:
@@ -752,9 +740,6 @@ private:
 	std::string m_host{""};
 	std::string m_port{""};
 
-	// The io_context is required for all I/O
-    net::io_context m_ioc;
-
 	std::shared_ptr<WebSocketSession> m_publicSession;
 	std::shared_ptr<WebSocketSession> m_privateSession;
 
@@ -764,8 +749,13 @@ private:
 	WsRouter m_router;
 
 private:
-    std::thread m_worker_thread;
+    std::thread* m_worker_thread;
     std::atomic_bool m_stop{false};
+
+	int bindToNumaNode{0};
+
+	// The io_context is required for all I/O
+    net::io_context& m_ioc;
 };
 
 

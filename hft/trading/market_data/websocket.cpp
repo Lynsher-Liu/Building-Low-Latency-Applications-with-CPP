@@ -177,47 +177,6 @@ void AsyncWebsocketClient::handle_trades_BTC_USDT(const json& msg)
 }
 
 /**
- * balance_and_position用于初始同步
- * 账户余额和持仓的完整快照（在登录后或断线重连时使用）。
- * 订阅后立即推送一次完整状态，之后仅在余额或持仓有重大变化时推送。
- *  初始化与校准的关键。避免本地与交易所状态不一致。
- * 
- * {
-    "arg": {
-        "channel": "balance_and_position",
-        "uid": "447074731796078878"
-    },
-    "data": [
-        {
-            "balData": [
-                {
-                    "cashBal": "3",
-                    "ccy": "BTC",
-                    "uTime": "1684852904715"
-                },
-                {
-                    "cashBal": "30",
-                    "ccy": "LTC",
-                    "uTime": "1684852904759"
-                },...
-            ]
-            "eventType": "snapshot",
-            "pTime": "1765472158607",
-            "posData": [
-            ],
-            "trades": [
-
-            ]
-        }
-    ]
-}
- */
-void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
-{
-    ASN_TRACE(logger, "enter handle_balance_and_position_update, msg: " << msg << "\n");
-}
-
-/**
  * 账户余额与可用保证金的更新
  * 当账户余额、可用保证金、冻结金额等发生变化时推送
  * 风控模块的核心，用于计算可用资金、保证金率、强平价
@@ -264,6 +223,47 @@ void AsyncWebsocketClient::handle_positions_update(const json& msg)
     ASN_TRACE(logger, "enter handle_positions_update, msg: " << msg << "\n");
 }
 
+
+/**
+ * balance_and_position用于初始同步
+ * 账户余额和持仓的完整快照（在登录后或断线重连时使用）。
+ * 订阅后立即推送一次完整状态，之后仅在余额或持仓有重大变化时推送。
+ *  初始化与校准的关键。避免本地与交易所状态不一致。
+ * 
+ * {
+    "arg": {
+        "channel": "balance_and_position",
+        "uid": "447074731796078878"
+    },
+    "data": [
+        {
+            "balData": [
+                {
+                    "cashBal": "3",
+                    "ccy": "BTC",
+                    "uTime": "1684852904715"
+                },
+                {
+                    "cashBal": "30",
+                    "ccy": "LTC",
+                    "uTime": "1684852904759"
+                },...
+            ]
+            "eventType": "snapshot",
+            "pTime": "1765472158607",
+            "posData": [
+            ],
+            "trades": [
+
+            ]
+        }
+    ]
+}
+ */
+void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
+{
+    ASN_TRACE(logger, "enter handle_balance_and_position_update, msg: " << msg << "\n");
+}
 
 
 
