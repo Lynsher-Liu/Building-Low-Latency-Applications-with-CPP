@@ -26,9 +26,9 @@ int main(int argc, char **argv)
 	ASN_INITLOG("./config/trading.log.properties");
 
 	boost::asio::io_context ioc;
-	//const int bindToNumaNode = affinity::get_least_loaded_numa_node();
+	const int bindToNumaNode = affinity::get_least_loaded_numa_node();
 
-	Trading::AsyncWebsocketClient* wsclient = new Trading::AsyncWebsocketClient(ioc, "wspap.okx.com", "8443"); // bindToNumaNode
+	Trading::AsyncWebsocketClient* wsclient = new Trading::AsyncWebsocketClient(ioc, "wspap.okx.com", "8443", bindToNumaNode);
 	wsclient->start();
 
 	boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);

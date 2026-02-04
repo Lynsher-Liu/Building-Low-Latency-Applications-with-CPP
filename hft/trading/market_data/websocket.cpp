@@ -5,7 +5,7 @@ using json = nlohmann::json;
 using namespace std;
 
 static AsnLoggerPtr logger = ASN_GETLOGGER("websocket_cpp");
-namespace Trading 
+namespace Market
 {
 
 void WsRouter::register_route(string topic_regex, 

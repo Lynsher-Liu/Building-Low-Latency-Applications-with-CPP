@@ -12,6 +12,8 @@
 #include <chrono>
 #include <optional>
 #include <json/json.hpp>
+#include <iostream> 
+#include <fstream>
 
 #include "concurrentqueue/concurrentqueue.h"
 #include <folly/concurrency/ConcurrentHashMap.h>
@@ -19,7 +21,6 @@
 #include "common/thread_utils.h"
 #include "common/lf_queue.h"
 #include "common/macros.h"
-#include "common/mcast_socket.h"
 #include "common/AsnLog.h"
 
 #include "ws_struct.h"
@@ -56,7 +57,7 @@ inline void fail(beast::error_code ec, char const* what)
 }
 
 
-namespace Trading 
+namespace Market
 {
 
 /**

@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2025-12-15 11:34:47
+ * @LastEditTime: 2026-02-03 16:42:38
  * @FilePath: /my_HFT/Chapter10/trading/market_data/ws_struct.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -30,7 +30,7 @@
 
 using json = nlohmann::json;
 
-namespace Common 
+namespace Market
 {
 	/// Type of trading algorithm.
 	enum class WsTopicStatus : int8_t {
