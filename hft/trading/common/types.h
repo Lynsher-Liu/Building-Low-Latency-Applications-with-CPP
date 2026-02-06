@@ -43,6 +43,10 @@ namespace Common
 		return static_cast<int>(side);
 	}
 	/// Constants used across the ecosystem to represent upper bounds on various containers.
+
+	/// Define max lengths
+	constexpr size_t MAX_TRADE_ID_LEN = 16;	
+
 	/// Trading instruments / TickerIds from [0, ME_MAX_TICKERS].
 	constexpr size_t ME_MAX_TICKERS = 8;
 
