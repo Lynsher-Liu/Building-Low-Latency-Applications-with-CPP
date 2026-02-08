@@ -34,21 +34,6 @@ public:
     Singleton(const Singleton&)=delete;
     Singleton& operator =(const Singleton&)=delete;
 
-#if 0
-    template <typename ... Args>
-    static void createInstance(Args&& ... args)
-    {
-        if (m_instance == nullptr)
-        {
-            unique_lock<std::mutex> locker(m_mutex);
-            if (m_instance == nullptr)
-            {
-                m_instance = shared_ptr<T>(new T(std::forward<Args>(args)...));
-            }
-        }
-    }
-#endif
-
 protected:
     Singleton() noexcept = default;
 
