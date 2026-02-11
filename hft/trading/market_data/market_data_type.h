@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-02-06 18:49:08
+ * @LastEditTime: 2026-02-09 15:36:35
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -41,14 +41,23 @@ struct PriceLevel
     double quantity;
 	uint32_t order_count;
     TimeStamp last_update_time;
+
+    static int id;
     
-    PriceLevel() : exchange(ExchangeName::EXCHANGE_OKX), symbol(SymbolName::BTC_USDT), price(0.0), quantity(0.0), order_count(1), last_update_time(0) {}
+    PriceLevel() : exchange(ExchangeName::EXCHANGE_OKX), symbol(SymbolName::BTC_USDT), price(0.0), quantity(0.0), order_count(1), last_update_time(0) 
+    {
+        id++;
+    }
     PriceLevel(ExchangeName e, SymbolName s, double p, double q, uint32_t c, TimeStamp ts = 0) 
-        : exchange(e), symbol(s), price(p), quantity(q), order_count(c), last_update_time(ts) {}
+        : exchange(e), symbol(s), price(p), quantity(q), order_count(c), last_update_time(ts) 
+        {
+            id++;
+        }
     
     auto toString() const {
       std::stringstream ss;
-      ss << "PriceLevel"
+      ss << "PriceLevel - "
+         << "ID:" << id
          << " ["
          << " exchange:" << static_cast<int>(exchange)
          << " symbol:" << static_cast<int>(symbol)
@@ -59,6 +68,8 @@ struct PriceLevel
       return ss.str();
     }
 };
+
+int PriceLevel::id = 0;
 
 // 成交记录
 struct Trade 
@@ -77,9 +88,12 @@ struct Trade
 	char trade_id[MAX_TRADE_ID_LEN]{"123"};		// "2491342311", // 聚合的多笔交易中最新一笔交易的成交ID
 	TimeStamp timestamp{0};
 
+    static int id;
+
 	auto toString() const {
       std::stringstream ss;
-      ss << "Trade"
+      ss << "Trade - "
+         << "ID:" << id
          << " ["
          << " exchange:" << static_cast<int>(exchange)
          << " symbol:" << static_cast<int>(symbol)
