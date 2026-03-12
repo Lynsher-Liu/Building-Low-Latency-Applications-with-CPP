@@ -402,6 +402,7 @@ private:
 					ASN_ERROR(loggerH, "Exception in handling json: " << e.what());
                 }                          
             }
+            // TODO: put msg into PriceLevelHandler queue or TradeHandler, not directly call the callback, to decouple the msg receiving and processing, and also make it more thread safe
             else if(content.contains("arg") && content.contains("data"))
             {
                 m_router.route_request(content);
