@@ -8,7 +8,8 @@
 #include <queue>
 #include <thread>
 #include <vector>
-#include "utils.h"
+
+#include "singleton.h"
 
 #define THREAD_POOL_NUM 4
 

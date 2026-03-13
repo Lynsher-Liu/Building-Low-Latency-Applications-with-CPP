@@ -6,7 +6,7 @@
 #include <array>
 
 #include "macros.h"
-#include "time_utils.h"
+#include "timer.h"
 
 namespace Common 
 {
@@ -64,7 +64,7 @@ namespace Common
 	/// Maximum price level depth in the order books.
 	constexpr size_t ME_MAX_PRICE_LEVELS = 256;
 
-	enum ExchangeName : uint8_t {
+	enum class ExchangeName : uint8_t {
     EXCHANGE_OKX = 0,
     EXCHANGE_BINANCE = 1,
     EXCHANGE_BYBIT = 2,
@@ -98,11 +98,12 @@ struct PriceLevel
 {
 	ExchangeName exchange{ExchangeName::EXCHANGE_OKX};
     SymbolName symbol{SymbolName::BTC_USDT};
+	Side side{Side::INVALID};
 	
     double price{0.0};
     double quantity{0.0};
 	uint32_t order_count{1};
-    TimeStamp last_update_time{0};
+    timer::TimeStamp last_update_time{0};
 
     /**
      * price level, for books5, level=0 means best bid/ask, level=1 means second best bid/ask, etc. 
@@ -111,12 +112,28 @@ struct PriceLevel
     uint32_t level{0}; 
     static int id;
     
-    PriceLevel() : exchange(ExchangeName::EXCHANGE_OKX), symbol(SymbolName::BTC_USDT), price(0.0), quantity(0.0), order_count(1), last_update_time(0), level(0)
-    {
-        id++;
-    }
-    PriceLevel(ExchangeName e, SymbolName s, double p, double q, uint32_t c, TimeStamp ts = 0, uint32_t l = 0) 
-        : exchange(e), symbol(s), price(p), quantity(q), order_count(c), last_update_time(ts), level(l) 
+    PriceLevel() = delete;
+	// 	exchange(ExchangeName::EXCHANGE_OKX), 
+	// 	symbol(SymbolName::BTC_USDT), 
+	// 	side(Side::INVALID),
+	// 	price(0.0), 
+	// 	quantity(0.0), 
+	// 	order_count(1), 
+	// 	last_update_time(0), 
+	// 	level(0)
+    // {
+    //     id++;
+    // }
+
+    PriceLevel(ExchangeName e, SymbolName s, Side si, double p, double q, uint32_t c, timer::TimeStamp ts, uint32_t l) : 
+		exchange(e), 
+		symbol(s), 
+		side(si),
+		price(p), 
+		quantity(q), 
+		order_count(c), 
+		last_update_time(ts), 
+		level(l) 
         {
             id++;
         }
@@ -154,7 +171,7 @@ struct Trade
 	int source{0};          // 订单来源, 0：普通订单, 1：流动性增强计划订单
 	
 	char trade_id[MAX_TRADE_ID_LEN]{"123"};		// "2491342311", // 聚合的多笔交易中最新一笔交易的成交ID
-	TimeStamp timestamp{0};
+	timer::TimeStamp timestamp{0};
 
     static int id;
 

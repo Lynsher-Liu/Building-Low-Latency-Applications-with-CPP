@@ -2,7 +2,7 @@
  * @Author: LynsherLiu xinyiliu@astri.org
  * @Date: 2024-03-05 10:02:46
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2025-12-04 12:07:05
+ * @LastEditTime: 2026-03-13 15:39:45
  * @FilePath: /path_planning_service/src/mapf/timer.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -29,25 +29,41 @@
 namespace timer 
 {
 
+typedef int64_t Nanos;
+
+// 时间戳类型 (纳秒精度)
+using TimeStamp = uint64_t;
+
+constexpr Nanos NANOS_TO_MICROS = 1000;
+constexpr Nanos MICROS_TO_MILLIS = 1000;
+constexpr Nanos MILLIS_TO_SECS = 1000;
+constexpr Nanos NANOS_TO_MILLIS = NANOS_TO_MICROS * MICROS_TO_MILLIS;
+constexpr Nanos NANOS_TO_SECS = NANOS_TO_MILLIS * MILLIS_TO_SECS;
+
 class TradingClock : public Singleton<TradingClock>
 {
 public:
     friend class Singleton<TradingClock>;
 
     //void update(atomic_bool& stopFlag);
-    uint64_t getUnixEpochTime() noexcept
+    uint64_t getCurSecondTime() noexcept
     {
-        return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
 
     uint64_t getCurMicroTime() noexcept
     {
-        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
 
     uint64_t getCurNanoTime() noexcept
     {
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+
+    uint64_t getCurTradingNanoTime() noexcept
+    {
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() - clockStartTime;
     }
 
 private:   

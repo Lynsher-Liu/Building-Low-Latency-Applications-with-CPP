@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-02-06 19:02:09
+ * @LastEditTime: 2026-03-13 19:03:16
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -16,8 +16,9 @@
 #include "concurrentqueue/concurrentqueue.h"
 
 #include "../market_data/market_data_type.h"
+#include "market_order_book.h"
 #include "../common/types.h"
-#include "../common/time_utils.h"
+#include "../common/event_bus.h"
 #include "../common/mem_pool.h"
 #include "../common/singleton.h"
 #include "../common/thread_utils.h"
@@ -52,6 +53,8 @@ private:
 
     /// Hash map container from TickerId -> MarketOrderBook.
     MarketOrderBookHashMap ticker_order_book_;
+
+    EventBus& bus_;
 
 public:
     ExchangeProcessor() = default;
@@ -98,13 +101,17 @@ public:
 
 	void run()
     {
-        //TODO: check the logic by ai
-        while (!m_stop.load()) {
+        while (!m_stop.load()) 
+        {
             // 处理PriceLevel对象
             PriceLevel* pl;
             while (priceLevelQueue.try_dequeue(pl)) {
                 // 处理价格更新逻辑，例如更新订单簿等
                 ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString());
+
+                ticker_order_book_[pl->symbol].onPricelevelUpdate(pl);
+
+                bus_.publish(Event(*pl)); // publish to event bus
                 
                 // 处理完后将对象返回内存池
                 priceLevelPool.deallocate(pl);
@@ -115,6 +122,8 @@ public:
             while (tradeQueue.try_dequeue(trade)) {
                 // 处理交易更新逻辑，例如记录成交信息等
                 ASN_INFO(loggerH, "Processing Trade: " + trade->toString());
+
+                bus_.publish(Event(*trade)); // publish to event bus
                 
                 // 处理完后将对象返回内存池
                 tradePool.deallocate(trade);

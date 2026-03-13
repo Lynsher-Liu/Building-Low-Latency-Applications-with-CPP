@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/macros.h"
-#include "common/logging.h"
+#include "common/event_bus.h"
 
 #include "position_keeper.h"
 #include "om_order.h"
@@ -68,13 +68,21 @@ namespace Trading {
     }
   };
 
-  /// Hash map from TickerId -> RiskInfo.
-  typedef std::array<RiskInfo, ME_MAX_TICKERS> TickerRiskInfoHashMap;
+/// Hash map from TickerId -> RiskInfo.
+typedef std::array<RiskInfo, ME_MAX_TICKERS> TickerRiskInfoHashMap;
 
-  /// Top level risk manager class to compute and check risk across all trading instruments.
-  class RiskManager {
-  public:
-    RiskManager(Common::Logger *logger, const PositionKeeper *position_keeper, const TradeEngineCfgHashMap &ticker_cfg);
+/// Top level risk manager class to compute and check risk across all trading instruments.
+class RiskManager : public EventSubscriber
+{
+public:
+    RiskManager(EventBus& bus, const PositionKeeper *position_keeper, const TradeEngineCfgHashMap &ticker_cfg)
+        : EventSubscriber(bus, "RiskManager"), position_keeper_(position_keeper) 
+    {
+      for (TickerId i = 0; i < ticker_cfg.size(); ++i) {
+        ticker_risk_.at(i).position_info_ = position_keeper_->getPositionInfo(i);
+        ticker_risk_.at(i).risk_cfg_ = ticker_cfg.at(i).risk_cfg_;
+      }
+    }
 
     auto checkPreTradeRisk(TickerId ticker_id, Side side, Qty qty) const noexcept {
       return ticker_risk_.at(ticker_id).checkPreTradeRisk(side, qty);
@@ -90,6 +98,25 @@ namespace Trading {
     RiskManager &operator=(const RiskManager &) = delete;
 
     RiskManager &operator=(const RiskManager &&) = delete;
+  
+protected:
+    void handleEvent(const Event& event) override 
+	{
+        std::visit([this](const auto& e) {
+            using T = std::decay_t<decltype(e)>;
+            if constexpr (std::is_same_v<T, OrderBookUpdated>) {
+                // 简单风控检查（例如价格涨跌幅）
+                if (e.best_bid > 100000) { // 假设阈值
+                    std::cout << "[Risk] Price too high! Bid=" << e.best_bid << std::endl;
+                }
+            } else if constexpr (std::is_same_v<T, TradeOccurred>) {
+                // 检查大额交易
+                if (e.quantity > 100) {
+                    std::cout << "[Risk] Large trade: " << e.quantity << " @ " << e.price << std::endl;
+                }
+            }
+        }, event);
+    }
 
   private:
     std::string time_str_;

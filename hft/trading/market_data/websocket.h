@@ -22,8 +22,10 @@
 #include "common/lf_queue.h"
 #include "common/macros.h"
 #include "common/AsnLog.h"
+#include "common/timer.h"
 
 #include "ws_struct.h"
+#include "../strategy/exchange_processor.h"
 
 #include "exchange/market_data/market_update.h"
 
@@ -132,6 +134,8 @@ private:
     net::steady_timer retry_timer_;
     std::chrono::steady_clock::time_point last_pong_{};
     std::chrono::seconds backoff_{1};
+
+    Trading::ExchangeProcessor<ExchangeName::EXCHANGE_OKX> exchangeProcessor; //TODO: put all exchangeProcessors& in ws client
 
 public:
     // Resolver and socket require an io_context
@@ -402,10 +406,58 @@ private:
 					ASN_ERROR(loggerH, "Exception in handling json: " << e.what());
                 }                          
             }
-            // TODO: put msg into PriceLevelHandler queue or TradeHandler, not directly call the callback, to decouple the msg receiving and processing, and also make it more thread safe
+            // put data msg into PriceLevelHandler queue or TradeHandler, not directly call the callback
             else if(content.contains("arg") && content.contains("data"))
             {
-                m_router.route_request(content);
+                //m_router.route_request(content); TODO: move the router to exchange processor
+
+                auto clock = timer ::TradingClock::getInstance();
+                auto curTime = clock->getCurMicroTime();
+                auto exchange = ExchangeName::EXCHANGE_OKX; // TODO: obtain exchange name from msg
+
+                try
+                {
+                    SymbolName symbol = SymbolName::BTC_USDT;
+                    if (content["arg"]["instId"] == "BTC-USDT")
+                    {
+                        symbol = SymbolName::BTC_USDT;
+                    }
+                    if (content["arg"]["instId"] == "BTC_USDT_SWAP")
+                    {
+                        symbol = SymbolName::BTC_USDT_SWAP;
+                    }   
+                                            
+                    if (content["arg"]["channel"] == "bbo-tbt" || content["arg"]["channel"] == "books5")
+                    {             
+                        json& bids = content["arg"]["data"]["bids"];  
+                        Side side = Side::BUY;     
+                        for (unsigned int i = 0; i < bids.size(); ++i)
+                        {
+                            double price = bids[i][0];
+                            double quantity = bids[i][1];
+                            uint32_t order_count = bids[i][3];                        
+                            uint32_t level = i;
+
+                            exchangeProcessor.writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                        }
+                        
+                        json& asks = content["arg"]["data"]["asks"];   
+                        side = Side::SELL;    
+                        for (unsigned int i = 0; i < asks.size(); ++i)
+                        {
+                            double price = asks[i][0];
+                            double quantity = asks[i][1];
+                            uint32_t order_count = asks[i][3];                        
+                            uint32_t level = i;
+
+                            exchangeProcessor.writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                        }                   
+                    }
+                }
+                catch(const std::exception& e)
+                {
+                    ASN_ERROR(loggerH, "Exception in handling json: " << e.what());
+                }
             }       		    
         }
 		

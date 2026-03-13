@@ -79,7 +79,17 @@ namespace Trading {
     trade_engine_->onOrderBookUpdate(market_update->ticker_id_, market_update->price_, market_update->side_, this);
   }
 
-  auto MarketOrderBook::toString(bool detailed, bool validity_check) const -> std::string {
+auto MarketOrderBook::onPricelevelUpdate(const Common::PriceLevel* price_level) noexcept -> void
+{
+	// 1. update priceLevel
+
+	// 2. update BBO
+	
+	// 3. update position_keeper and risk_manager if needed
+ 
+} 
+
+auto MarketOrderBook::toString(bool detailed, bool validity_check) const -> std::string {
     std::stringstream ss;
     std::string time_str;
 

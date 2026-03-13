@@ -2,7 +2,6 @@
 
 #include "common/types.h"
 #include "common/mem_pool.h"
-#include "common/logging.h"
 
 #include "market_order.h"
 #include "exchange/market_data/market_update.h"
@@ -18,6 +17,7 @@ namespace Trading {
 
     /// Process market data update and update the limit order book.
     auto onMarketUpdate(const Exchange::MEMarketUpdate *market_update) noexcept -> void;
+    auto onPricelevelUpdate(const Common::PriceLevel* price_level) noexcept -> void;
 
     auto setTradeEngine(TradeEngine *trade_engine) {
       trade_engine_ = trade_engine;
