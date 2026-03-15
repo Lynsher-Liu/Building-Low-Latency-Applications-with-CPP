@@ -135,11 +135,11 @@ private:
     std::chrono::steady_clock::time_point last_pong_{};
     std::chrono::seconds backoff_{1};
 
-    Trading::ExchangeProcessor<ExchangeName::EXCHANGE_OKX> exchangeProcessor; //TODO: put all exchangeProcessors& in ws client
+    Trading::ExchangeProcessor<ExchangeName::EXCHANGE_OKX>& exchangeProcessor; //TODO: put all exchangeProcessors& in ws client
 
 public:
     // Resolver and socket require an io_context
-    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, std::string target) :
+    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, std::string target, Trading::ExchangeProcessor<ExchangeName::EXCHANGE_OKX>& exchange) :
         resolver_(net::make_strand(ioc)),
         ioc_(ioc),
         //stream_(net::make_strand(ioc), ssl_ctx_),
@@ -147,7 +147,8 @@ public:
         retry_timer_(ioc),
 		b_private_session_(b_private_session),
 		target_(target),
-		m_router(router)
+		m_router(router),
+		exchangeProcessor(exchange)
     {
 		ASN_DEBUG(loggerH, "Start a new WebSocketSession");
 		m_topics.reserve(MAX_TOPIC_SIZE);
@@ -414,6 +415,7 @@ private:
                 auto clock = timer ::TradingClock::getInstance();
                 auto curTime = clock->getCurMicroTime();
                 auto exchange = ExchangeName::EXCHANGE_OKX; // TODO: obtain exchange name from msg
+                Side side;
 
                 try
                 {
@@ -430,7 +432,7 @@ private:
                     if (content["arg"]["channel"] == "bbo-tbt" || content["arg"]["channel"] == "books5")
                     {             
                         json& bids = content["arg"]["data"]["bids"];  
-                        Side side = Side::BUY;     
+                        side = Side::BUY;     
                         for (unsigned int i = 0; i < bids.size(); ++i)
                         {
                             double price = bids[i][0];
@@ -452,6 +454,21 @@ private:
 
                             exchangeProcessor.writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
                         }                   
+                    }
+                    else if (content["arg"]["channel"] == "trades")
+                    {
+                        json& data = content["arg"]["data"];
+                        Side side = data["side"] == "buy" ? Side::BUY : Side::SELL;                        
+                        double price = std::stod(data["px"].get<std::string>());
+                        double quantity = std::stod(data["sz"].get<std::string>());
+                        uint32_t count = std::stoi(data["count"].get<std::string>());
+                        uint64_t seqId = data["seqId"].get<uint64_t>();
+                        int source = std::stoi(data["source"].get<std::string>());          
+                        
+                        const char* trade_id = data["trade_id"].get<std::string>().c_str();	
+                        timer::TimeStamp timestamp = data["timestamp"].get<timer::TimeStamp>();
+
+                        exchangeProcessor.writeTradeMsg2Queue(exchange, symbol, count, side, price, quantity, seqId, source, trade_id, timestamp);                    
                     }
                 }
                 catch(const std::exception& e)

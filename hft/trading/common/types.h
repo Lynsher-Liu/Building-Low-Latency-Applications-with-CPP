@@ -112,7 +112,7 @@ struct PriceLevel
     uint32_t level{0}; 
     static int id;
     
-    PriceLevel() = delete;
+    PriceLevel() = default; // keep the default constructor for deque()
 	// 	exchange(ExchangeName::EXCHANGE_OKX), 
 	// 	symbol(SymbolName::BTC_USDT), 
 	// 	side(Side::INVALID),
@@ -175,6 +175,23 @@ struct Trade
 
     static int id;
 
+	Trade() = default;
+
+	Trade(ExchangeName e, SymbolName s, uint32_t c, Side si, double p, double q, uint64_t seq, int src, const char* tid, timer::TimeStamp ts) : 
+		exchange(e), 
+		symbol(s), 
+		count(c), 
+		side(si), 
+		price(p), 
+		quantity(q), 
+		seqId(seq), 
+		source(src), 
+		timestamp(ts)
+		{
+			strncpy(trade_id, tid, MAX_TRADE_ID_LEN);
+			id++;
+		}
+
 	auto toString() const {
       std::stringstream ss;
       ss << "Trade - "
@@ -191,6 +208,8 @@ struct Trade
       return ss.str();
     }
 };
+
+int Trade::id = 0;
 
 
 

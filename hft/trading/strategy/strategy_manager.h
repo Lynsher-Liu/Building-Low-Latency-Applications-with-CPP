@@ -18,46 +18,127 @@ using namespace Common;
 
 namespace Trading 
 {
-
-template<typename StrategyType>
-class StrategyManager : public EventSubscriber
-{ 
+// 策略基类（CRTP）
+template<typename Derived>
+class Strategy {
 public:
-    StrategyManager(EventBus& bus, std::unique_ptr<StrategyType> strategy)
-        : EventSubscriber(bus, "StrategyManager"), strategy_(std::move(strategy)) {}
+    void process(const PriceLevel& pl) {
+        static_cast<Derived*>(this)->handle(pl);
+    }
+    // 子类必须提供 interests() 方法返回关注的（交易所，币对）列表
+};
 
-protected:
-    void handleEvent(const Event& event) override {
-        std::visit([this](const auto& e) {
-            using T = std::decay_t<decltype(e)>;
-            if constexpr (std::is_same_v<T, OrderBookUpdated>) {
-                strategy_->onOrderBookUpdate(e);
-            } else if constexpr (std::is_same_v<T, TradeOccurred>) {
-                strategy_->onTrade(e);
+// 示例策略1：单交易所单币对做市
+class SimpleMM : public Strategy<SimpleMM> {
+public:
+    SimpleMM(Exchange e, Symbol s) : exch_(e), sym_(s) {}
+    void handle(const PriceLevel& pl) {
+        if (pl.exch == exch_ && pl.sym == sym_) {
+            std::cout << "SimpleMM: " << static_cast<int>(exch_) 
+                      << " " << static_cast<int>(sym_) << " price=" << pl.price << std::endl;
+        }
+    }
+    std::vector<std::pair<Exchange, Symbol>> interests() const {
+        return {{exch_, sym_}};
+    }
+private:
+    Exchange exch_;
+    Symbol sym_;
+};
+
+// 示例策略2：跨交易所套利（单币对）
+class CrossExArb : public Strategy<CrossExArb> {
+public:
+    CrossExArb(Symbol s) : sym_(s) {}
+    void handle(const PriceLevel& pl) {
+        if (pl.sym == sym_) {
+            // 注意：此策略有内部缓存，在多线程环境下需要同步
+            // 为简化，假设这里只打印，不涉及缓存
+            std::cout << "CrossExArb: " << static_cast<int>(sym_) 
+                      << " from " << static_cast<int>(pl.exch) << " price=" << pl.price << std::endl;
+        }
+    }
+    std::vector<std::pair<Exchange, Symbol>> interests() const {
+        // 关注所有交易所的该币对
+        return {{Exchange::Binance, sym_}, {Exchange::OKX, sym_}, {Exchange::Bybit, sym_}};
+    }
+private:
+    Symbol sym_;
+};
+
+// 策略管理器
+template<typename... Strategies>
+class StrategyManager : public EventSubscriber
+{
+public:
+    StrategyManager(EventBus& bus, Strategies&&... strategies)
+        : EventSubscriber(bus, "StrategyManager"), strategies_(std::forward<Strategies>(strategies)...)
+    {
+        buildDispatchTable();
+    }
+
+    // 处理事件：提交到线程池
+    void onPriceLevel(const PriceLevel& pl, ThreadPool& pool) {
+        auto it = dispatch_table_.find(pl.exch);
+        if (it != dispatch_table_.end()) {
+            auto it2 = it->second.find(pl.sym);
+            if (it2 != it->second.end()) {
+                const auto& indices = it2->second;
+                for (size_t idx : indices) {
+                    // 每个任务拷贝事件，独立处理
+                    pool.enqueue([this, idx, pl]() {
+                        callStrategy(idx, pl);
+                    });
+                }
             }
-        }, event);
+        }
     }
 
 private:
-    std::unique_ptr<StrategyType> strategy_;
+    EventBus& bus_;
+    std::tuple<Strategies...> strategies_;
+    // 分发表：交易所 -> 币对 -> 策略索引列表
+    std::unordered_map<Exchange, std::unordered_map<Symbol, std::vector<size_t>>> dispatch_table_;
+
+    void handleEvent(const Event& event) override 
+    {
+        std::visit([this](const auto& e) {
+            using T = std::decay_t<decltype(e)>;
+            if constexpr (std::is_same_v<T, PriceLevel>) {
+                onPriceLevel(e, thread_pool_);
+            } else if constexpr (std::is_same_v<T, Trade>) {
+                onTrade(e, thread_pool_);
+            }
+        }, event);
+    }
+    
+    void buildDispatchTable() {
+        forEachIndex([this](auto idx) {
+            const auto& strat = std::get<idx>(strategies_);
+            auto interests = strat.interests();
+            for (const auto& [exch, sym] : interests) {
+                dispatch_table_[exch][sym].push_back(idx);
+            }
+        });
+    }
+
+    template<typename F, size_t... I>
+    void forEachIndexImpl(F&& f, std::index_sequence<I...>) {
+        (f(std::integral_constant<size_t, I>{}), ...);
+    }
+    template<typename F>
+    void forEachIndex(F&& f) {
+        forEachIndexImpl(std::forward<F>(f), std::index_sequence_for<Strategies...>{});
+    }
+
+    void callStrategy(size_t idx, const PriceLevel& pl) {
+        callStrategyImpl(idx, pl, std::index_sequence_for<Strategies...>{});
+    }
+
+    template<size_t... I>
+    void callStrategyImpl(size_t idx, const PriceLevel& pl, std::index_sequence<I...>) {
+        // 折叠表达式，依次比较索引并调用
+        ((idx == I ? (std::get<I>(strategies_).process(pl), void()) : void()), ...);
+    }
 };
-
-// 辅助函数：遍历tuple，为每个策略创建订阅者并注册到EventBus
-template<typename Tuple, size_t... I>
-auto register_strategies_impl(EventBus& bus, Tuple&& strategies, std::index_sequence<I...>) {
-    // 返回一个包含所有订阅者的tuple
-    return std::make_tuple(
-        (new StrategySubscriber<std::decay_t<decltype(std::get<I>(strategies))>>(
-            bus, std::make_unique<std::decay_t<decltype(std::get<I>(strategies))>>(
-                std::move(std::get<I>(strategies))
-            )
-        )...
-    );
-}
-
-template<typename... StrategyTypes>
-auto register_strategies(EventBus& bus, std::tuple<StrategyTypes...> strategies) {
-    return register_strategies_impl(bus, std::move(strategies),
-                                    std::index_sequence_for<StrategyTypes...>{});
-}
 }

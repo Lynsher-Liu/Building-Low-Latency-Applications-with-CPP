@@ -57,7 +57,14 @@ private:
     EventBus& bus_;
 
 public:
-    ExchangeProcessor() = default;
+    ExchangeProcessor(EventBus& bus) : bus_(bus)
+    {
+        // 初始化ticker_order_book_，为每个symbol创建一个MarketOrderBook实例
+        for (size_t i = 0; i < ME_MAX_TICKERS; ++i) {
+            ticker_order_book_[i] = new MarketOrderBook();
+        }
+    }
+
     ~ExchangeProcessor()
     {
         stop();

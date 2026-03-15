@@ -20,7 +20,6 @@
 
 #include "concurrentqueue/concurrentqueue.h"
 #include "types.h"
-#include "thread_pool.h"
 #include "mem_pool.h"
 #include "thread_utils.h"
 #include "AsnLog.h"
@@ -88,7 +87,8 @@ protected:
     virtual void handleEvent(const Event& event) = 0;
 
 private:
-    void run() {
+    void run() 
+    {
         while (!m_stop.load()) 
         {
             Event event;
