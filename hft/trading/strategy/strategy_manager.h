@@ -9,7 +9,9 @@
 #pragma once
 
 #include "common/macros.h"
+#include "common/types.h"
 #include "common/event_bus.h"
+#include "common/thread_pool.h"
 
 #include "position_keeper.h"
 #include "om_order.h"
@@ -31,39 +33,39 @@ public:
 // 示例策略1：单交易所单币对做市
 class SimpleMM : public Strategy<SimpleMM> {
 public:
-    SimpleMM(Exchange e, Symbol s) : exch_(e), sym_(s) {}
+    SimpleMM(ExchangeName e, SymbolName s) : exch_(e), sym_(s) {}
     void handle(const PriceLevel& pl) {
-        if (pl.exch == exch_ && pl.sym == sym_) {
+        if (pl.exchange == exch_ && pl.symbol == sym_) {
             std::cout << "SimpleMM: " << static_cast<int>(exch_) 
                       << " " << static_cast<int>(sym_) << " price=" << pl.price << std::endl;
         }
     }
-    std::vector<std::pair<Exchange, Symbol>> interests() const {
+    std::vector<std::pair<ExchangeName, SymbolName>> interests() const {
         return {{exch_, sym_}};
     }
 private:
-    Exchange exch_;
-    Symbol sym_;
+    ExchangeName exch_;
+    SymbolName sym_;
 };
 
 // 示例策略2：跨交易所套利（单币对）
 class CrossExArb : public Strategy<CrossExArb> {
 public:
-    CrossExArb(Symbol s) : sym_(s) {}
+    CrossExArb(SymbolName s) : sym_(s) {}
     void handle(const PriceLevel& pl) {
-        if (pl.sym == sym_) {
+        if (pl.symbol == sym_) {
             // 注意：此策略有内部缓存，在多线程环境下需要同步
             // 为简化，假设这里只打印，不涉及缓存
             std::cout << "CrossExArb: " << static_cast<int>(sym_) 
-                      << " from " << static_cast<int>(pl.exch) << " price=" << pl.price << std::endl;
+                      << " from " << static_cast<int>(pl.exchange) << " price=" << pl.price << std::endl;
         }
     }
-    std::vector<std::pair<Exchange, Symbol>> interests() const {
+    std::vector<std::pair<ExchangeName, SymbolName>> interests() const {
         // 关注所有交易所的该币对
-        return {{Exchange::Binance, sym_}, {Exchange::OKX, sym_}, {Exchange::Bybit, sym_}};
+        return {{ExchangeName::EXCHANGE_BINANCE, sym_}, {ExchangeName::EXCHANGE_OKX, sym_}, {ExchangeName::EXCHANGE_BYBIT, sym_}};
     }
 private:
-    Symbol sym_;
+    SymbolName sym_;
 };
 
 // 策略管理器
@@ -77,42 +79,49 @@ public:
         buildDispatchTable();
     }
 
+private:
+    EventBus& bus_;
+    std::tuple<Strategies...> strategies_;
+    // 分发表：交易所 -> 币对 -> 策略索引列表
+    std::unordered_map<ExchangeName, std::unordered_map<SymbolName, std::vector<size_t>>> dispatch_table_;
+    common::ThreadPool& thread_pool_ = common::ThreadPool::instance();
+
+    void handleEvent(const Event& event) override 
+    {
+        std::visit([this](const auto& e) 
+        {
+            using T = std::decay_t<decltype(e)>;
+            if constexpr (std::is_same_v<T, PriceLevel>) {
+                onPriceLevel(e);
+            } else if constexpr (std::is_same_v<T, Trade>) {
+                //onTrade(e);
+            }
+        }, event);
+    }
+
     // 处理事件：提交到线程池
-    void onPriceLevel(const PriceLevel& pl, ThreadPool& pool) {
-        auto it = dispatch_table_.find(pl.exch);
-        if (it != dispatch_table_.end()) {
-            auto it2 = it->second.find(pl.sym);
-            if (it2 != it->second.end()) {
+    void onPriceLevel(const PriceLevel& pl) 
+    {
+        auto it = dispatch_table_.find(pl.exchange);
+        if (it != dispatch_table_.end()) 
+        {
+            auto it2 = it->second.find(pl.symbol);
+            if (it2 != it->second.end()) 
+            {
                 const auto& indices = it2->second;
-                for (size_t idx : indices) {
+                for (size_t idx : indices) 
+                {
                     // 每个任务拷贝事件，独立处理
-                    pool.enqueue([this, idx, pl]() {
+                    thread_pool_.enqueue([this, idx, pl]() {
                         callStrategy(idx, pl);
                     });
                 }
             }
         }
     }
-
-private:
-    EventBus& bus_;
-    std::tuple<Strategies...> strategies_;
-    // 分发表：交易所 -> 币对 -> 策略索引列表
-    std::unordered_map<Exchange, std::unordered_map<Symbol, std::vector<size_t>>> dispatch_table_;
-
-    void handleEvent(const Event& event) override 
-    {
-        std::visit([this](const auto& e) {
-            using T = std::decay_t<decltype(e)>;
-            if constexpr (std::is_same_v<T, PriceLevel>) {
-                onPriceLevel(e, thread_pool_);
-            } else if constexpr (std::is_same_v<T, Trade>) {
-                onTrade(e, thread_pool_);
-            }
-        }, event);
-    }
     
-    void buildDispatchTable() {
+    void buildDispatchTable() 
+    {
         forEachIndex([this](auto idx) {
             const auto& strat = std::get<idx>(strategies_);
             auto interests = strat.interests();

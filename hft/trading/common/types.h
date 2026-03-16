@@ -99,10 +99,10 @@ struct PriceLevel
 	ExchangeName exchange{ExchangeName::EXCHANGE_OKX};
     SymbolName symbol{SymbolName::BTC_USDT};
 	Side side{Side::INVALID};
+	uint32_t order_count{1};
 	
     double price{0.0};
-    double quantity{0.0};
-	uint32_t order_count{1};
+    double quantity{0.0};	
     timer::TimeStamp last_update_time{0};
 
     /**
