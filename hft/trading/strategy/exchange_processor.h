@@ -39,17 +39,17 @@ template<ExchangeName E>
 class ExchangeProcessor
 {
 private:
-    static thread_local MemPool<PriceLevel> priceLevelPool; // 每个线程维护一个本地内存池
-    moodycamel::ConcurrentQueue<PriceLevel*> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
+    //static thread_local MemPool<PriceLevel> priceLevelPool; // 每个线程维护一个本地内存池
+    moodycamel::ConcurrentQueue<shared_ptr<PriceLevel>> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
     
-    static thread_local MemPool<Trade> tradePool; // 每个线程维护一个本地内存池
-    moodycamel::ConcurrentQueue<Trade*> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
+    //static thread_local MemPool<Trade> tradePool; // 每个线程维护一个本地内存池
+    moodycamel::ConcurrentQueue<shared_ptr<Trade>> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
 
     std::atomic_bool m_stop;
     std::thread* m_worker_thread;
 
     int bindToNumaNode{0}; //TODO: check binding which numa node
-    affinity::PmrMemoryNumaAllocator allocator{bindToNumaNode}; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
+    affinity::PmrMemoryNumaAllocator numa_allocator{bindToNumaNode}; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
 
     /// Hash map container from TickerId -> MarketOrderBook.
     MarketOrderBookHashMap ticker_order_book_;
@@ -73,14 +73,16 @@ public:
     template<typename... Args>
     void writePriceLevelMsg2Queue(Args&&... args) { 
         // 从内存池分配一个新的PriceLevel对象，并将数据复制到该对象中
-        PriceLevel* pl = priceLevelPool.allocate(std::forward<Args>(args)...);
+        //PriceLevel* pl = priceLevelPool.allocate(std::forward<Args>(args)...);
+        shared_ptr<const PriceLevel> pl =numa_allocator.produceSharedPtr<PriceLevel>(std::forward<Args>(args)...); // 使用NUMA-aware allocator分配PriceLevel对象
         priceLevelQueue.enqueue(pl);
     }
 
     template<typename... Args>
     void writeTradeMsg2Queue(Args&&... args) { 
         // 从内存池分配一个新的Trade对象，并将数据复制到该对象中
-        Trade* trade = tradePool.allocate(std::forward<Args>(args)...);
+        //Trade* trade = tradePool.allocate(std::forward<Args>(args)...);
+        shared_ptr<const Trade> trade = numa_allocator.produceSharedPtr<Trade>(std::forward<Args>(args)...); // 使用NUMA-aware allocator分配Trade对象
         tradeQueue.enqueue(trade);
     }
 
@@ -111,29 +113,28 @@ public:
         while (!m_stop.load()) 
         {
             // 处理PriceLevel对象
-            PriceLevel* pl;
+            shared_ptr<const PriceLevel> pl;
             while (priceLevelQueue.try_dequeue(pl)) {
                 // 处理价格更新逻辑，例如更新订单簿等
                 ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString());
 
                 ticker_order_book_[pl->symbol].onPricelevelUpdate(pl);
 
-                bus_.publish(Event(*pl)); // publish to event bus
-                
+                bus_.publish(Event(pl)); // publish to event bus
                 // 处理完后将对象返回内存池
-                priceLevelPool.deallocate(pl);
+                //priceLevelPool.deallocate(pl);
             }
 
             // 处理Trade对象
-            Trade* trade;
+            shared_ptr<const Trade> trade;
             while (tradeQueue.try_dequeue(trade)) {
                 // 处理交易更新逻辑，例如记录成交信息等
                 ASN_INFO(loggerH, "Processing Trade: " + trade->toString());
 
-                bus_.publish(Event(*trade)); // publish to event bus
+                bus_.publish(Event(trade)); // publish to event bus
                 
                 // 处理完后将对象返回内存池
-                tradePool.deallocate(trade);
+                //tradePool.deallocate(trade);
             }
 
             // 可以添加适当的睡眠以避免忙等待，或者使用条件变量来优化等待机制
@@ -141,9 +142,10 @@ public:
         }
     }
 
+
+
 private:
     
-
 };
 
 class ExchangeProcessorMap
