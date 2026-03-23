@@ -84,14 +84,14 @@ public:
     }
 
 protected:
-    virtual void handleEvent(shared_ptr<const Event>) = 0;
+    virtual void handleEvent(const Event& event) = 0;
 
 private:
     void run() 
     {
         while (!m_stop.load()) 
         {
-            shared_ptr<const Event> event;
+            const Event& event;
             if (m_queue.try_dequeue(event)) {
                 handleEvent(event);
             } else {
@@ -114,7 +114,6 @@ int EventSubscriber::id_counter = 0;
 class EventBus
 {
 private:
-    //moodycamel::ConcurrentQueue<std::shared_ptr<Event>> eventQueue;
     std::vector<EventSubscriber*> subscribers_;
 
 public:
@@ -128,7 +127,7 @@ public:
     }
 
     // 发布事件：将事件拷贝到每个订阅者的队列
-    void publish(shared_ptr<const Event>& event) 
+    void publish(const Event& event) 
     {
         for (auto* sub : subscribers_) {
             sub->getQueue().enqueue(event);
