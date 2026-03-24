@@ -65,11 +65,11 @@ namespace Common
 	constexpr size_t ME_MAX_PRICE_LEVELS = 256;
 
 	enum class ExchangeName : uint8_t {
-    EXCHANGE_OKX = 0,
-    EXCHANGE_BINANCE = 1,
-    EXCHANGE_BYBIT = 2,
-    EXCHANGE_DERIBIT = 3
-};
+		EXCHANGE_OKX = 0,
+		EXCHANGE_BINANCE = 1,
+		EXCHANGE_BYBIT = 2,
+		EXCHANGE_DERIBIT = 3
+	};
 
 inline std::string exchangeToString(ExchangeName exchange) 
 {
@@ -92,125 +92,6 @@ enum SymbolName : uint8_t {
     BTC_USDT = 0,
     BTC_USDT_SWAP = 1
 };
-
-// okx only provide these message info for each price level
-struct PriceLevel 
-{
-	ExchangeName exchange{ExchangeName::EXCHANGE_OKX};
-    SymbolName symbol{SymbolName::BTC_USDT};
-	Side side{Side::INVALID};
-	uint32_t order_count{1};
-	
-    double price{0.0};
-    double quantity{0.0};	
-    timer::TimeStamp last_update_time{0};
-
-    /**
-     * price level, for books5, level=0 means best bid/ask, level=1 means second best bid/ask, etc. 
-     * For example, if we receive a books5 update with 5 price levels, we can assign level=1 to the best bid/ask, level=2 to the second best bid/ask, etc.
-     */
-    uint32_t level{0}; 
-    static int id;
-    
-    PriceLevel() = default; // keep the default constructor for deque()
-	// 	exchange(ExchangeName::EXCHANGE_OKX), 
-	// 	symbol(SymbolName::BTC_USDT), 
-	// 	side(Side::INVALID),
-	// 	price(0.0), 
-	// 	quantity(0.0), 
-	// 	order_count(1), 
-	// 	last_update_time(0), 
-	// 	level(0)
-    // {
-    //     id++;
-    // }
-
-    PriceLevel(ExchangeName e, SymbolName s, Side si, double p, double q, uint32_t c, timer::TimeStamp ts, uint32_t l) : 
-		exchange(e), 
-		symbol(s), 
-		side(si),
-		price(p), 
-		quantity(q), 
-		order_count(c), 
-		last_update_time(ts), 
-		level(l) 
-        {
-            id++;
-        }
-    
-    auto toString() const {
-      std::stringstream ss;
-      ss << "PriceLevel - "
-         << "ID:" << id
-         << " ["
-         << " exchange:" << static_cast<int>(exchange)
-         << " symbol:" << static_cast<int>(symbol)
-         << " level:" << level
-         << " qty:" << qtyToString(quantity)
-         << " price:" << priceToString(price)
-         << " order_count:" << order_count
-         << "]";
-      return ss.str();
-    }
-};
-
-int PriceLevel::id = 0;
-
-// 成交记录
-struct Trade 
-{
-	ExchangeName exchange;     
-    SymbolName symbol;
-
-	uint32_t count{1};          // 聚合的订单匹配数量
-	Side side{Side::INVALID};         // 吃单方向
-	double price{0.0};        	// 成交价格
-	double quantity{0};           // 成交数量
-	
-	uint64_t seqId{123}; 		//785659571,     // 推送的序列号	
-	int source{0};          // 订单来源, 0：普通订单, 1：流动性增强计划订单
-	
-	char trade_id[MAX_TRADE_ID_LEN]{"123"};		// "2491342311", // 聚合的多笔交易中最新一笔交易的成交ID
-	timer::TimeStamp timestamp{0};
-
-    static int id;
-
-	Trade() = default;
-
-	Trade(ExchangeName e, SymbolName s, uint32_t c, Side si, double p, double q, uint64_t seq, int src, const char* tid, timer::TimeStamp ts) : 
-		exchange(e), 
-		symbol(s), 
-		count(c), 
-		side(si), 
-		price(p), 
-		quantity(q), 
-		seqId(seq), 
-		source(src), 
-		timestamp(ts)
-		{
-			strncpy(trade_id, tid, MAX_TRADE_ID_LEN);
-			id++;
-		}
-
-	auto toString() const {
-      std::stringstream ss;
-      ss << "Trade - "
-         << "ID:" << id
-         << " ["
-         << " exchange:" << static_cast<int>(exchange)
-         << " symbol:" << static_cast<int>(symbol)
-         << " match count:" << std::to_string(count)
-         << " side:" << sideToString(side)
-         << " qty:" << qtyToString(quantity)
-         << " price:" << priceToString(price)
-         << " trade_id:" << trade_id
-         << "]";
-      return ss.str();
-    }
-};
-
-int Trade::id = 0;
-
 
 
 	typedef uint64_t OrderId;
@@ -357,4 +238,123 @@ int Trade::id = 0;
 
 	/// Hash map from TickerId -> TradeEngineCfg.
 	typedef std::array<TradeEngineCfg, ME_MAX_TICKERS> TradeEngineCfgHashMap;
+
+
+// okx only provide these message info for each price level
+struct PriceLevel 
+{
+	ExchangeName exchange{ExchangeName::EXCHANGE_OKX};
+    SymbolName symbol{SymbolName::BTC_USDT};
+	Side side{Side::INVALID};
+	uint32_t order_count{1};
+	
+    double price{0.0};
+    double quantity{0.0};	
+    timer::TimeStamp last_update_time{0};
+
+    /**
+     * price level, for books5, level=0 means best bid/ask, level=1 means second best bid/ask, etc. 
+     * For example, if we receive a books5 update with 5 price levels, we can assign level=1 to the best bid/ask, level=2 to the second best bid/ask, etc.
+     */
+    uint32_t level{0}; 
+    static int id;
+    
+    PriceLevel() = default; // keep the default constructor for deque()
+	// 	exchange(ExchangeName::EXCHANGE_OKX), 
+	// 	symbol(SymbolName::BTC_USDT), 
+	// 	side(Side::INVALID),
+	// 	price(0.0), 
+	// 	quantity(0.0), 
+	// 	order_count(1), 
+	// 	last_update_time(0), 
+	// 	level(0)
+    // {
+    //     id++;
+    // }
+
+    PriceLevel(ExchangeName e, SymbolName s, Side si, double p, double q, uint32_t c, timer::TimeStamp ts, uint32_t l) : 
+		exchange(e), 
+		symbol(s), 
+		side(si),
+		price(p), 
+		quantity(q), 
+		order_count(c), 
+		last_update_time(ts), 
+		level(l) 
+        {
+            id++;
+        }
+    
+    auto toString() const {
+      std::stringstream ss;
+      ss << "PriceLevel - "
+         << "ID:" << id
+         << " ["
+         << " exchange:" << static_cast<int>(exchange)
+         << " symbol:" << static_cast<int>(symbol)
+         << " level:" << level
+         << " qty:" << qtyToString(quantity)
+         << " price:" << priceToString(price)
+         << " order_count:" << order_count
+         << "]";
+      return ss.str();
+    }
+};
+
+int PriceLevel::id = 0;
+
+// 成交记录
+struct Trade 
+{
+	ExchangeName exchange;     
+    SymbolName symbol;
+
+	uint32_t count{1};          // 聚合的订单匹配数量
+	Side side{Side::INVALID};         // 吃单方向
+	double price{0.0};        	// 成交价格
+	double quantity{0};           // 成交数量
+	
+	uint64_t seqId{123}; 		//785659571,     // 推送的序列号	
+	int source{0};          // 订单来源, 0：普通订单, 1：流动性增强计划订单
+	
+	char trade_id[MAX_TRADE_ID_LEN]{"123"};		// "2491342311", // 聚合的多笔交易中最新一笔交易的成交ID
+	timer::TimeStamp timestamp{0};
+
+    static int id;
+
+	Trade() = default;
+
+	Trade(ExchangeName e, SymbolName s, uint32_t c, Side si, double p, double q, uint64_t seq, int src, const char* tid, timer::TimeStamp ts) : 
+		exchange(e), 
+		symbol(s), 
+		count(c), 
+		side(si), 
+		price(p), 
+		quantity(q), 
+		seqId(seq), 
+		source(src), 
+		timestamp(ts)
+		{
+			strncpy(trade_id, tid, MAX_TRADE_ID_LEN);
+			id++;
+		}
+
+	auto toString() const {
+      std::stringstream ss;
+      ss << "Trade - "
+         << "ID:" << id
+         << " ["
+         << " exchange:" << static_cast<int>(exchange)
+         << " symbol:" << static_cast<int>(symbol)
+         << " match count:" << std::to_string(count)
+         << " side:" << sideToString(side)
+         << " qty:" << qtyToString(quantity)
+         << " price:" << priceToString(price)
+         << " trade_id:" << trade_id
+         << "]";
+      return ss.str();
+    }
+};
+
+int Trade::id = 0;
 }

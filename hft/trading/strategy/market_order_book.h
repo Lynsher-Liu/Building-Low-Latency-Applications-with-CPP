@@ -11,7 +11,7 @@ namespace Trading {
 
   class MarketOrderBook final {
   public:
-    MarketOrderBook(TickerId ticker_id, Logger *logger);
+    MarketOrderBook(TickerId ticker_id); //, Logger *logger
 
     ~MarketOrderBook();
 
@@ -94,7 +94,7 @@ namespace Trading {
     BBO bbo_;
 
     std::string time_str_;
-    Logger *logger_ = nullptr;
+    //Logger *logger_ = nullptr;
 
   private:
     auto priceToIndex(Price price) const noexcept {

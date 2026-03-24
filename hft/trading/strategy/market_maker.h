@@ -1,7 +1,15 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:35
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2026-03-24 16:15:15
+ * @FilePath: /my_HFT/hft/trading/strategy/market_maker.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include "common/macros.h"
-#include "common/logging.h"
+//#include "common/logging.h"
 
 #include "order_manager.h"
 #include "feature_engine.h"
@@ -11,23 +19,23 @@ using namespace Common;
 namespace Trading {
   class MarketMaker {
   public:
-    MarketMaker(Common::Logger *logger, TradeEngine *trade_engine, const FeatureEngine *feature_engine,
+    MarketMaker(TradeEngine *trade_engine, const FeatureEngine *feature_engine,
                 OrderManager *order_manager,
                 const TradeEngineCfgHashMap &ticker_cfg);
 
     /// Process order book updates, fetch the fair market price from the feature engine, check against the trading threshold and modify the passive orders.
     auto onOrderBookUpdate(TickerId ticker_id, Price price, Side side, const MarketOrderBook *book) noexcept -> void {
-      logger_->log("%:% %() % ticker:% price:% side:%\n", __FILE__, __LINE__, __FUNCTION__,
-                   Common::getCurrentTimeStr(&time_str_), ticker_id, Common::priceToString(price).c_str(),
-                   Common::sideToString(side).c_str());
+      // logger_->log("%:% %() % ticker:% price:% side:%\n", __FILE__, __LINE__, __FUNCTION__,
+      //              Common::getCurrentTimeStr(&time_str_), ticker_id, Common::priceToString(price).c_str(),
+      //              Common::sideToString(side).c_str());
 
       const auto bbo = book->getBBO();
       const auto fair_price = feature_engine_->getMktPrice();
 
       if (LIKELY(bbo->bid_price_ != Price_INVALID && bbo->ask_price_ != Price_INVALID && fair_price != Feature_INVALID)) {
-        logger_->log("%:% %() % % fair-price:%\n", __FILE__, __LINE__, __FUNCTION__,
-                     Common::getCurrentTimeStr(&time_str_),
-                     bbo->toString().c_str(), fair_price);
+        // logger_->log("%:% %() % % fair-price:%\n", __FILE__, __LINE__, __FUNCTION__,
+        //              Common::getCurrentTimeStr(&time_str_),
+        //              bbo->toString().c_str(), fair_price);
 
         const auto clip = ticker_cfg_.at(ticker_id).clip_;
         const auto threshold = ticker_cfg_.at(ticker_id).threshold_;
@@ -41,14 +49,14 @@ namespace Trading {
 
     /// Process trade events, which for the market making algorithm is none.
     auto onTradeUpdate(const Exchange::MEMarketUpdate *market_update, MarketOrderBook * /* book */) noexcept -> void {
-      logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                   market_update->toString().c_str());
+      // logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //              market_update->toString().c_str());
     }
 
     /// Process client responses for the strategy's orders.
     auto onOrderUpdate(const Exchange::MEClientResponse *client_response) noexcept -> void {
-      logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                   client_response->toString().c_str());
+      // logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //              client_response->toString().c_str());
 
       order_manager_->onOrderUpdate(client_response);
     }
@@ -72,7 +80,7 @@ namespace Trading {
     OrderManager *order_manager_ = nullptr;
 
     std::string time_str_;
-    Common::Logger *logger_ = nullptr;
+    //Common::Logger *logger_ = nullptr;
 
     /// Holds the trading configuration for the market making algorithm.
     const TradeEngineCfgHashMap ticker_cfg_;

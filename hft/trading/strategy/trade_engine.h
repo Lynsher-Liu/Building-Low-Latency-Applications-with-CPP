@@ -3,10 +3,10 @@
 #include <functional>
 
 #include "common/thread_utils.h"
-#include "common/time_utils.h"
+#include "common/timer.h"
 #include "common/lf_queue.h"
 #include "common/macros.h"
-#include "common/logging.h"
+#include "common/event_bus.h"
 
 #include "exchange/order_server/client_request.h"
 #include "exchange/order_server/client_response.h"
@@ -30,7 +30,8 @@ namespace Trading {
                 const TradeEngineCfgHashMap &ticker_cfg,
                 Exchange::ClientRequestLFQueue *client_requests,
                 Exchange::ClientResponseLFQueue *client_responses,
-                Exchange::MEMarketUpdateLFQueue *market_updates);
+                Exchange::MEMarketUpdateLFQueue *market_updates,
+                Common::EventBus& bus);
 
     ~TradeEngine();
 
@@ -42,15 +43,15 @@ namespace Trading {
 
     auto stop() -> void {
       while(incoming_ogw_responses_->size() || incoming_md_updates_->size()) {
-        logger_.log("%:% %() % Sleeping till all updates are consumed ogw-size:% md-size:%\n", __FILE__, __LINE__, __FUNCTION__,
-                    Common::getCurrentTimeStr(&time_str_), incoming_ogw_responses_->size(), incoming_md_updates_->size());
+        // logger_.log("%:% %() % Sleeping till all updates are consumed ogw-size:% md-size:%\n", __FILE__, __LINE__, __FUNCTION__,
+        //             Common::getCurrentTimeStr(&time_str_), incoming_ogw_responses_->size(), incoming_md_updates_->size());
 
         using namespace std::literals::chrono_literals;
         std::this_thread::sleep_for(10ms);
       }
 
-      logger_.log("%:% %() % POSITIONS\n%\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                  position_keeper_.toString());
+      // logger_.log("%:% %() % POSITIONS\n%\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //             position_keeper_.toString());
 
       run_ = false;
     }
@@ -76,11 +77,11 @@ namespace Trading {
     std::function<void(const Exchange::MEClientResponse *client_response)> algoOnOrderUpdate_;
 
     auto initLastEventTime() {
-      last_event_time_ = Common::getCurrentNanos();
+      last_event_time_ = timer::getCurNanoTime();
     }
 
     auto silentSeconds() {
-      return (Common::getCurrentNanos() - last_event_time_) / NANOS_TO_SECS;
+      return (timer::getCurNanoTime() - last_event_time_) / timer::NANOS_TO_SECS;
     }
 
     auto clientId() const {
@@ -113,11 +114,12 @@ namespace Trading {
     Exchange::ClientResponseLFQueue *incoming_ogw_responses_ = nullptr;
     Exchange::MEMarketUpdateLFQueue *incoming_md_updates_ = nullptr;
 
-    Nanos last_event_time_ = 0;
+    timer::TimeStamp last_event_time_ = 0;
     volatile bool run_ = false;
 
     std::string time_str_;
-    Logger logger_;
+    //Logger logger_;
+    Common::EventBus& bus_;
 
     /// Feature engine for the trading algorithms.
     FeatureEngine feature_engine_;
@@ -137,19 +139,19 @@ namespace Trading {
 
     /// Default methods to initialize the function wrappers.
     auto defaultAlgoOnOrderBookUpdate(TickerId ticker_id, Price price, Side side, MarketOrderBook *) noexcept -> void {
-      logger_.log("%:% %() % ticker:% price:% side:%\n", __FILE__, __LINE__, __FUNCTION__,
-                  Common::getCurrentTimeStr(&time_str_), ticker_id, Common::priceToString(price).c_str(),
-                  Common::sideToString(side).c_str());
+      // logger_.log("%:% %() % ticker:% price:% side:%\n", __FILE__, __LINE__, __FUNCTION__,
+      //             Common::getCurrentTimeStr(&time_str_), ticker_id, Common::priceToString(price).c_str(),
+      //             Common::sideToString(side).c_str());
     }
 
     auto defaultAlgoOnTradeUpdate(const Exchange::MEMarketUpdate *market_update, MarketOrderBook *) noexcept -> void {
-      logger_.log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                  market_update->toString().c_str());
+      // logger_.log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //             market_update->toString().c_str());
     }
 
     auto defaultAlgoOnOrderUpdate(const Exchange::MEClientResponse *client_response) noexcept -> void {
-      logger_.log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                  client_response->toString().c_str());
+      // logger_.log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //             client_response->toString().c_str());
     }
   };
 }

@@ -25,7 +25,7 @@
 #include "common/thread_utils.h"
 #include "common/lf_queue.h"
 #include "common/macros.h"
-#include "common/mcast_socket.h"
+//#include "common/mcast_socket.h"
 
 #include "exchange/market_data/market_update.h"
 #include "websocket.h"
@@ -34,7 +34,9 @@ using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;
 using namespace boost::placeholders;
 
-namespace Trading {
+#if 0
+namespace Trading 
+{
   class MarketDataConsumer {
   public:
     MarketDataConsumer(Common::ClientId client_id, Exchange::MEMarketUpdateLFQueue *market_updates, const std::string &iface,
@@ -114,3 +116,4 @@ namespace Trading {
     auto checkSnapshotSync() -> void;
   };
 }
+#endif

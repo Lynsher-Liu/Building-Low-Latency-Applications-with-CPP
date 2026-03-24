@@ -36,7 +36,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_COMPILER g++)
-set(CMAKE_CXX_FLAGS "-std=c++2a -Wall -Wextra  -Wpedantic")
+set(CMAKE_CXX_FLAGS "-std=c++2a -ldl -Wall -Wextra  -Wpedantic")
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O2 ") #-fsanitize=address
@@ -125,13 +125,13 @@ include_directories(
   ${DOUBLE_CONVERSION_INCLUDE_DIRS}
 )
 
-add_subdirectory(common)
-add_subdirectory(exchange)
+#add_subdirectory(common)
+#add_subdirectory(exchange)
 add_subdirectory(trading)
 
-list(APPEND LIBS libexchange)
+#list(APPEND LIBS libexchange)
 list(APPEND LIBS libtrading)
-list(APPEND LIBS libcommon)
+#list(APPEND LIBS libcommon)
 list(APPEND LIBS pthread)
 
 include_directories(${PROJECT_SOURCE_DIR})

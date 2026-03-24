@@ -1,7 +1,15 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:35
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2026-03-24 16:14:30
+ * @FilePath: /my_HFT/hft/trading/strategy/liquidity_taker.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include "common/macros.h"
-#include "common/logging.h"
+//#include "common/logging.h"
 
 #include "order_manager.h"
 #include "feature_engine.h"
@@ -11,29 +19,29 @@ using namespace Common;
 namespace Trading {
   class LiquidityTaker {
   public:
-    LiquidityTaker(Common::Logger *logger, TradeEngine *trade_engine, const FeatureEngine *feature_engine,
+    LiquidityTaker(TradeEngine *trade_engine, const FeatureEngine *feature_engine,
                    OrderManager *order_manager,
                    const TradeEngineCfgHashMap &ticker_cfg);
 
     /// Process order book updates, which for the liquidity taking algorithm is none.
     auto onOrderBookUpdate(TickerId ticker_id, Price price, Side side, MarketOrderBook *) noexcept -> void {
-      logger_->log("%:% %() % ticker:% price:% side:%\n", __FILE__, __LINE__, __FUNCTION__,
-                   Common::getCurrentTimeStr(&time_str_), ticker_id, Common::priceToString(price).c_str(),
-                   Common::sideToString(side).c_str());
+      // logger_->log("%:% %() % ticker:% price:% side:%\n", __FILE__, __LINE__, __FUNCTION__,
+      //              Common::getCurrentTimeStr(&time_str_), ticker_id, Common::priceToString(price).c_str(),
+      //              Common::sideToString(side).c_str());
     }
 
     /// Process trade events, fetch the aggressive trade ratio from the feature engine, check against the trading threshold and send aggressive orders.
     auto onTradeUpdate(const Exchange::MEMarketUpdate *market_update, MarketOrderBook *book) noexcept -> void {
-      logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                   market_update->toString().c_str());
+      // logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //              market_update->toString().c_str());
 
       const auto bbo = book->getBBO();
       const auto agg_qty_ratio = feature_engine_->getAggTradeQtyRatio();
 
       if (LIKELY(bbo->bid_price_ != Price_INVALID && bbo->ask_price_ != Price_INVALID && agg_qty_ratio != Feature_INVALID)) {
-        logger_->log("%:% %() % % agg-qty-ratio:%\n", __FILE__, __LINE__, __FUNCTION__,
-                     Common::getCurrentTimeStr(&time_str_),
-                     bbo->toString().c_str(), agg_qty_ratio);
+        // logger_->log("%:% %() % % agg-qty-ratio:%\n", __FILE__, __LINE__, __FUNCTION__,
+        //              Common::getCurrentTimeStr(&time_str_),
+        //              bbo->toString().c_str(), agg_qty_ratio);
 
         const auto clip = ticker_cfg_.at(market_update->ticker_id_).clip_;
         const auto threshold = ticker_cfg_.at(market_update->ticker_id_).threshold_;
@@ -49,8 +57,8 @@ namespace Trading {
 
     /// Process client responses for the strategy's orders.
     auto onOrderUpdate(const Exchange::MEClientResponse *client_response) noexcept -> void {
-      logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                   client_response->toString().c_str());
+      // logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //              client_response->toString().c_str());
       order_manager_->onOrderUpdate(client_response);
     }
 
@@ -73,7 +81,7 @@ namespace Trading {
     OrderManager *order_manager_ = nullptr;
 
     std::string time_str_;
-    Common::Logger *logger_ = nullptr;
+    //Common::Logger *logger_ = nullptr;
 
     /// Holds the trading configuration for the liquidity taking algorithm.
     const TradeEngineCfgHashMap ticker_cfg_;

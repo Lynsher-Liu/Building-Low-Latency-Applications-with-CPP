@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:35
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2026-03-24 16:28:28
+ * @FilePath: /my_HFT/hft/trading/strategy/order_manager.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include "order_manager.h"
 #include "trade_engine.h"
 
@@ -11,9 +19,9 @@ namespace Trading {
     *order = {ticker_id, next_order_id_, side, price, qty, OMOrderState::PENDING_NEW};
     ++next_order_id_;
 
-    logger_->log("%:% %() % Sent new order % for %\n", __FILE__, __LINE__, __FUNCTION__,
-                 Common::getCurrentTimeStr(&time_str_),
-                 new_request.toString().c_str(), order->toString().c_str());
+    // logger_->log("%:% %() % Sent new order % for %\n", __FILE__, __LINE__, __FUNCTION__,
+    //              Common::getCurrentTimeStr(&time_str_),
+    //              new_request.toString().c_str(), order->toString().c_str());
   }
 
   /// Send a cancel for the specified order, and update the OMOrder object passed here.
@@ -25,8 +33,8 @@ namespace Trading {
 
     order->order_state_ = OMOrderState::PENDING_CANCEL;
 
-    logger_->log("%:% %() % Sent cancel % for %\n", __FILE__, __LINE__, __FUNCTION__,
-                 Common::getCurrentTimeStr(&time_str_),
-                 cancel_request.toString().c_str(), order->toString().c_str());
+    // logger_->log("%:% %() % Sent cancel % for %\n", __FILE__, __LINE__, __FUNCTION__,
+    //              Common::getCurrentTimeStr(&time_str_),
+    //              cancel_request.toString().c_str(), order->toString().c_str());
   }
 }

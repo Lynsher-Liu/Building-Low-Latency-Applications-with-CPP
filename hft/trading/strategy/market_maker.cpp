@@ -1,11 +1,19 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2025-12-01 13:52:35
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2026-03-24 16:15:23
+ * @FilePath: /my_HFT/hft/trading/strategy/market_maker.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include "market_maker.h"
 
 #include "trade_engine.h"
 
 namespace Trading {
-  MarketMaker::MarketMaker(Common::Logger *logger, TradeEngine *trade_engine, const FeatureEngine *feature_engine,
+  MarketMaker::MarketMaker(TradeEngine *trade_engine, const FeatureEngine *feature_engine,
                            OrderManager *order_manager, const TradeEngineCfgHashMap &ticker_cfg)
-      : feature_engine_(feature_engine), order_manager_(order_manager), logger_(logger),
+      : feature_engine_(feature_engine), order_manager_(order_manager), //logger_(logger),
         ticker_cfg_(ticker_cfg) {
     trade_engine->algoOnOrderBookUpdate_ = [this](auto ticker_id, auto price, auto side, auto book) {
       onOrderBookUpdate(ticker_id, price, side, book);

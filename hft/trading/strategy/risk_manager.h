@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/macros.h"
+#include "common/types.h"
 #include "common/event_bus.h"
 
 #include "position_keeper.h"
@@ -104,25 +105,26 @@ protected:
 	{
         std::visit([this](const auto& e) {
             using T = std::decay_t<decltype(e)>;
-            if constexpr (std::is_same_v<T, OrderBookUpdated>) {
+            if constexpr (std::is_same_v<T, PriceLevel>) {
                 // 简单风控检查（例如价格涨跌幅）
-                if (e.best_bid > 100000) { // 假设阈值
-                    std::cout << "[Risk] Price too high! Bid=" << e.best_bid << std::endl;
-                }
-            } else if constexpr (std::is_same_v<T, TradeOccurred>) {
+                // if (e.best_bid > 100000) { // 假设阈值
+                //     std::cout << "[Risk] Price too high! Bid=" << e.best_bid << std::endl;
+                // }
+            } else if constexpr (std::is_same_v<T, Trade>) {
                 // 检查大额交易
-                if (e.quantity > 100) {
-                    std::cout << "[Risk] Large trade: " << e.quantity << " @ " << e.price << std::endl;
-                }
+                // if (e.quantity > 100) {
+                //     std::cout << "[Risk] Large trade: " << e.quantity << " @ " << e.price << std::endl;
+                // }
             }
         }, event);
     }
 
   private:
     std::string time_str_;
-    Common::Logger *logger_ = nullptr;
+    //Common::Logger *logger_ = nullptr;
 
     /// Hash map container from TickerId -> RiskInfo.
     TickerRiskInfoHashMap ticker_risk_;
+    const PositionKeeper *position_keeper_ = nullptr;
   };
 }

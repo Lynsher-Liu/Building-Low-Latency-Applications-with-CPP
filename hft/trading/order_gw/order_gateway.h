@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-02-03 22:45:54
+ * @LastEditTime: 2026-03-24 17:32:09
  * @FilePath: /my_HFT/hft/trading/order_gw/order_gateway.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -15,6 +15,7 @@
 
 #include "common/thread_utils.h"
 #include "common/macros.h"
+#include "common/timer.h"
 
 #include "exchange/order_server/client_request.h"
 #include "exchange/order_server/client_response.h"
@@ -37,8 +38,8 @@ namespace Trading {
     /// Start and stop the order gateway main thread.
     auto start() {
       run_ = true;
-      ASSERT_MSG(tcp_socket_.connect(ip_, iface_, port_, false) >= 0,
-             "Unable to connect to ip:" + ip_ + " port:" + std::to_string(port_) + " on iface:" + iface_ + " error:" + std::string(std::strerror(errno)));
+      // ASSERT_MSG(tcp_socket_.connect(ip_, iface_, port_, false) >= 0,
+      //        "Unable to connect to ip:" + ip_ + " port:" + std::to_string(port_) + " on iface:" + iface_ + " error:" + std::string(std::strerror(errno)));
       ASSERT_MSG(Common::createAndStartThread(-1, "Trading/OrderGateway", [this]() { run(); }) != nullptr, "Failed to start OrderGateway thread.");
     }
 
@@ -74,20 +75,20 @@ namespace Trading {
     volatile bool run_ = false;
 
     std::string time_str_;
-    Logger logger_;
+    //Logger logger_;
 
     /// Sequence numbers to track the sequence number to set on outgoing client requests and expected on incoming client responses.
     size_t next_outgoing_seq_num_ = 1;
     size_t next_exp_seq_num_ = 1;
 
     /// TCP connection to the exchange's order server.
-    Common::TCPSocket tcp_socket_;
+    //Common::TCPSocket tcp_socket_;
 
   private:
     /// Main thread loop - sends out client requests to the exchange and reads and dispatches incoming client responses.
     auto run() noexcept -> void;
 
     /// Callback when an incoming client response is read, we perform some checks and forward it to the lock free queue connected to the trade engine.
-    auto recvCallback(TCPSocket *socket, Nanos rx_time) noexcept -> void;
+    //auto recvCallback(TCPSocket *socket, Nanos rx_time) noexcept -> void;
   };
 }

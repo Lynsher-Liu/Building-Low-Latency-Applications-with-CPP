@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2026-03-13 19:12:48
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-13 19:15:39
+ * @LastEditTime: 2026-03-23 17:39:31
  * @FilePath: /my_HFT/hft/trading/strategy/strategy_manager.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -120,7 +120,7 @@ private:
         }
     }
     
-    void buildDispatchTable() 
+    constexpr void buildDispatchTable() 
     {
         forEachIndex([this](auto idx) {
             const auto& strat = std::get<idx>(strategies_);

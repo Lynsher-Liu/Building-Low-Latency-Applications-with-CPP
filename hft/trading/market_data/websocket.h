@@ -412,8 +412,8 @@ private:
             {
                 //m_router.route_request(content); TODO: move the router to exchange processor
 
-                auto clock = timer ::TradingClock::getInstance();
-                auto curTime = clock->getCurMicroTime();
+                //auto clock = timer ::TradingClock::getInstance();
+                auto curTime = timer::getCurMicroTime();
                 auto exchange = ExchangeName::EXCHANGE_OKX; // TODO: obtain exchange name from msg
                 Side side;
 

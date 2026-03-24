@@ -35,7 +35,7 @@ namespace Trading {
     }
 
     /// Process an execution and update the position, pnl and volume.
-    auto addFill(const Exchange::MEClientResponse *client_response, Logger *logger) noexcept {
+    auto addFill(const Exchange::MEClientResponse *client_response) noexcept { //, Logger *logger
       const auto old_position = position_;
       const auto side_index = sideToIndex(client_response->side_);
       const auto opp_side_index = sideToIndex(client_response->side_ == Side::BUY ? Side::SELL : Side::BUY);
@@ -73,12 +73,12 @@ namespace Trading {
       total_pnl_ = unreal_pnl_ + real_pnl_;
 
       std::string time_str;
-      logger->log("%:% %() % % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str),
-                  toString(), client_response->toString().c_str());
+      // logger->log("%:% %() % % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str),
+      //             toString(), client_response->toString().c_str());
     }
 
     /// Process a change in top-of-book prices (BBO), and update unrealized pnl if there is an open position.
-    auto updateBBO(const BBO *bbo, Logger *logger) noexcept {
+    auto updateBBO(const BBO *bbo) noexcept { //, Logger *logger
       std::string time_str;
       bbo_ = bbo;
 
@@ -97,8 +97,9 @@ namespace Trading {
         total_pnl_ = unreal_pnl_ + real_pnl_;
 
         if (total_pnl_ != old_total_pnl)
-          logger->log("%:% %() % % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str),
-                      toString(), bbo_->toString());
+          // logger->log("%:% %() % % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str),
+          //             toString(), bbo_->toString());
+          std::cout << timer::getCurNanoTime() << " " << toString() << " " << bbo_->toString() << "\n";
       }
     }
   };
@@ -106,12 +107,12 @@ namespace Trading {
   /// Top level position keeper class to compute position, pnl and volume for all trading instruments.
   class PositionKeeper {
   public:
-    PositionKeeper(Common::Logger *logger)
-        : logger_(logger) {
-    }
+    PositionKeeper() //Common::Logger *logger
+        //: logger_(logger) 
+        {}
 
     /// Deleted default, copy & move constructors and assignment-operators.
-    PositionKeeper() = delete;
+    //PositionKeeper() = delete;
 
     PositionKeeper(const PositionKeeper &) = delete;
 
@@ -123,18 +124,18 @@ namespace Trading {
 
   private:
     std::string time_str_;
-    Common::Logger *logger_ = nullptr;
+    //Common::Logger *logger_ = nullptr;
 
     /// Hash map container from TickerId -> PositionInfo.
     std::array<PositionInfo, ME_MAX_TICKERS> ticker_position_;
 
   public:
     auto addFill(const Exchange::MEClientResponse *client_response) noexcept {
-      ticker_position_.at(client_response->ticker_id_).addFill(client_response, logger_);
+      ticker_position_.at(client_response->ticker_id_).addFill(client_response); //, logger_
     }
 
     auto updateBBO(TickerId ticker_id, const BBO *bbo) noexcept {
-      ticker_position_.at(ticker_id).updateBBO(bbo, logger_);
+      ticker_position_.at(ticker_id).updateBBO(bbo); //, logger_
     }
 
     auto getPositionInfo(TickerId ticker_id) const noexcept {

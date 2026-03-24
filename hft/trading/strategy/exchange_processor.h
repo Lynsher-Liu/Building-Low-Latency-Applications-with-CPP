@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-13 19:03:16
+ * @LastEditTime: 2026-03-24 18:09:34
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -15,7 +15,6 @@
 #include <chrono>
 #include "concurrentqueue/concurrentqueue.h"
 
-#include "../market_data/market_data_type.h"
 #include "market_order_book.h"
 #include "../common/types.h"
 #include "../common/event_bus.h"
@@ -24,6 +23,7 @@
 #include "../common/thread_utils.h"
 #include "../common/AsnLog.h"
 #include "../common/affinity.h"
+//#include "../common/struct_pack.hpp"
 
 using namespace Common;
 
@@ -40,10 +40,10 @@ class ExchangeProcessor
 {
 private:
     //static thread_local MemPool<PriceLevel> priceLevelPool; // 每个线程维护一个本地内存池
-    moodycamel::ConcurrentQueue<shared_ptr<PriceLevel>> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
+    moodycamel::ConcurrentQueue<shared_ptr<const PriceLevel>> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
     
     //static thread_local MemPool<Trade> tradePool; // 每个线程维护一个本地内存池
-    moodycamel::ConcurrentQueue<shared_ptr<Trade>> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
+    moodycamel::ConcurrentQueue<shared_ptr<const Trade>> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
 
     std::atomic_bool m_stop;
     std::thread* m_worker_thread;
@@ -116,9 +116,10 @@ public:
             shared_ptr<const PriceLevel> pl;
             while (priceLevelQueue.try_dequeue(pl)) {
                 // 处理价格更新逻辑，例如更新订单簿等
-                ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString());
+                //auto buffer = struct_pack::serialize<std::string>(*(pl.get())); TODO: check using it
+                ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString()); //pl->toString()
 
-                ticker_order_book_[pl->symbol].onPricelevelUpdate(pl);
+                //ticker_order_book_[pl->symbol].onPricelevelUpdate(pl);
 
                 bus_.publish(Event(pl)); // publish to event bus
                 // 处理完后将对象返回内存池

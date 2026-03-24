@@ -468,6 +468,36 @@ function setup_trading() {
 }
 
 
+function install_header_only_headers() {
+  HEADER_ONLY_SRC_DIR="${HEADER_ONLY_SRC_DIR:-$DEPS_DIR}"
+  HEADER_ONLY_DST_DIR="${HEADER_ONLY_DST_DIR:-$PREFIX/include}"
+  HEADER_ONLY_LIBS="${HEADER_ONLY_LIBS:-concurrentqueue json struct_pack}"  # add more names if needed
+
+  if [ ! -d "$HEADER_ONLY_SRC_DIR" ]; then
+    echo -e "${COLOR_RED}[ ERROR ] header-only source base directory not found at $HEADER_ONLY_SRC_DIR ${COLOR_OFF}"
+    return 1
+  fi
+
+  echo -e "${COLOR_GREEN}[ INFO ] Installing header-only libraries from $HEADER_ONLY_SRC_DIR to $HEADER_ONLY_DST_DIR ${COLOR_OFF}"
+  mkdir -p "$HEADER_ONLY_DST_DIR"
+
+  for lib in $HEADER_ONLY_LIBS; do
+    src="$HEADER_ONLY_SRC_DIR/$lib"
+    if [ -d "$src" ]; then
+      echo -e "${COLOR_GREEN}[ INFO ] Copying header-only lib $lib ${COLOR_OFF}"
+      mkdir -p "$HEADER_ONLY_DST_DIR/$lib"
+      cp -a "$src"/. "$HEADER_ONLY_DST_DIR/$lib"/ || {
+        echo -e "${COLOR_RED}[ ERROR ] failed to copy $src to $HEADER_ONLY_DST_DIR/$lib ${COLOR_OFF}"
+        return 1
+      }
+    else
+      echo -e "${COLOR_GREEN}[ INFO ] header-only lib not present: $src (skip) ${COLOR_OFF}"
+    fi
+  done
+
+  echo -e "${COLOR_GREEN}[ INFO ] header-only files installed successfully. ${COLOR_OFF}"
+}
+
 function clean_trading() {
   echo clean_trading
   rm -rf build/
@@ -478,6 +508,8 @@ function build() {
   if [ "${BUILD_COMPONENTS}" = "" ]; then
     BUILD_COMPONENTS="trading"
   fi
+
+  install_header_only_headers
 
   case "${BUILD_COMPONENTS}" in
     "all" | "fmt")
@@ -567,6 +599,8 @@ INSTALL_DEPENDENCIES=false
 FETCH_DEPENDENCIES=true
 PREFIX=$BASE_DIR/installed
 DEPS_DIR=$BASE_DIR/third-party
+HEADER_ONLY_SRC_DIR="$DEPS_DIR"
+HEADER_ONLY_DST_DIR="$PREFIX/include"
 MODULE=""
 BUILD_COMPONENTS=""
 NEED_CLEAN=false

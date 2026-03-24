@@ -1,6 +1,7 @@
 #include "common/AsnLog.h"
 #include "market_data_consumer.h"
 
+#if 0
 namespace Trading {
   MarketDataConsumer::MarketDataConsumer(Common::ClientId client_id, Exchange::MEMarketUpdateLFQueue *market_updates,
                                          const std::string &iface,
@@ -229,3 +230,4 @@ namespace Trading {
     }
   }
 }
+#endif

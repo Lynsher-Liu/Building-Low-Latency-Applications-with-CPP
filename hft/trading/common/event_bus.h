@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:34
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-13 19:14:46
+ * @LastEditTime: 2026-03-24 18:08:47
  * @FilePath: /my_HFT/hft/common/time_utils.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -26,14 +26,40 @@
 #include "affinity.h"
 
 
-static AsnLoggerPtr loggerH = ASN_GETLOGGER("eventBus_h");
+static AsnLoggerPtr loggerEventBus_h = ASN_GETLOGGER("eventBus_h");
 
 namespace Common
 {
 
 using Event = std::variant<shared_ptr<const PriceLevel>, shared_ptr<const Trade>>;
 
-class EventBus;
+class EventSubscriber;
+
+class EventBus
+{
+private:
+    std::vector<EventSubscriber*> subscribers_;
+
+public:
+    EventBus() = default;
+    ~EventBus() = default;
+
+    // 注册订阅者
+    void subscribe(EventSubscriber* subscriber) 
+    {
+        subscribers_.push_back(subscriber);
+    }
+
+    // 发布事件：将事件拷贝到每个订阅者的队列
+    void publish(const Event& event);
+    // {
+    //     for (auto* sub : subscribers_) {
+    //         //sub->getQueue().enqueue(event);
+    //         sub->enqueueEvent(event);
+    //     }
+    // }
+};
+
 
 /**
  * Modules who want to receive events should inherit from this Subscriber class and implement the handleEvent method. 
@@ -63,7 +89,7 @@ public:
 		m_stop.store(false);
 		m_worker_thread = Common::createAndStartThread(-1, "Subscriber-"+std::to_string(id_counter), [this]() { run(); });
 		if (!m_worker_thread)
-			ASN_ERROR(loggerH, "Failed to start Subscriber-"+std::to_string(id_counter));
+			ASN_ERROR(loggerEventBus_h, "Failed to start Subscriber-"+std::to_string(id_counter));
     }
 
     void stop()
@@ -78,9 +104,14 @@ public:
     }
 
     // 实现Subscriber接口
-    moodycamel::ConcurrentQueue<Event>& getQueue() 
+    // moodycamel::ConcurrentQueue<Event>& getQueue() 
+    // {
+    //     return m_queue;
+    // }
+
+    void enqueueEvent(const Event& event) 
     {
-        return m_queue;
+        m_queue.enqueue(event);
     }
 
 protected:
@@ -91,7 +122,7 @@ private:
     {
         while (!m_stop.load()) 
         {
-            const Event& event;
+            Event event;
             if (m_queue.try_dequeue(event)) {
                 handleEvent(event);
             } else {
@@ -111,29 +142,5 @@ int EventSubscriber::id_counter = 0;
 
 
 
-class EventBus
-{
-private:
-    std::vector<EventSubscriber*> subscribers_;
 
-public:
-    EventBus() = default;
-    ~EventBus() = default;
-
-    // 注册订阅者
-    void subscribe(EventSubscriber* subscriber) 
-    {
-        subscribers_.push_back(subscriber);
-    }
-
-    // 发布事件：将事件拷贝到每个订阅者的队列
-    void publish(const Event& event) 
-    {
-        for (auto* sub : subscribers_) {
-            sub->getQueue().enqueue(event);
-        }
-    }
-
-
-};
 }

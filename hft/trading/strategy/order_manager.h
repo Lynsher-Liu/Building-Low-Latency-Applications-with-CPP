@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/macros.h"
-#include "common/logging.h"
+//#include "common/logging.h"
 
 #include "exchange/order_server/client_response.h"
 
@@ -16,17 +16,17 @@ namespace Trading {
   /// Manages orders for a trading algorithm, hides the complexity of order management to simplify trading strategies.
   class OrderManager {
   public:
-    OrderManager(Common::Logger *logger, TradeEngine *trade_engine, RiskManager& risk_manager)
-        : trade_engine_(trade_engine), risk_manager_(risk_manager), logger_(logger) {
-    }
+    OrderManager(TradeEngine *trade_engine, RiskManager& risk_manager) //Common::Logger *logger, 
+        : trade_engine_(trade_engine), risk_manager_(risk_manager)//, logger_(logger) 
+        {}
 
     /// Process an order update from a client response and update the state of the orders being managed.
     auto onOrderUpdate(const Exchange::MEClientResponse *client_response) noexcept -> void {
-      logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                   client_response->toString().c_str());
+      // logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //              client_response->toString().c_str());
       auto order = &(ticker_side_order_.at(client_response->ticker_id_).at(sideToIndex(client_response->side_)));
-      logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
-                   order->toString().c_str());
+      // logger_->log("%:% %() % %\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str_),
+      //              order->toString().c_str());
 
       switch (client_response->type_) {
         case Exchange::ClientResponseType::ACCEPTED: {
@@ -72,11 +72,11 @@ namespace Trading {
             const auto risk_result = risk_manager_.checkPreTradeRisk(ticker_id, side, qty);
             if(LIKELY(risk_result == RiskCheckResult::ALLOWED)) {
               newOrder(order, ticker_id, price, side, qty);
-            } else
-              logger_->log("%:% %() % Ticker:% Side:% Qty:% RiskCheckResult:%\n", __FILE__, __LINE__, __FUNCTION__,
-                           Common::getCurrentTimeStr(&time_str_),
-                           tickerIdToString(ticker_id), sideToString(side), qtyToString(qty),
-                           riskCheckResultToString(risk_result));
+            } //else
+              // logger_->log("%:% %() % Ticker:% Side:% Qty:% RiskCheckResult:%\n", __FILE__, __LINE__, __FUNCTION__,
+              //              Common::getCurrentTimeStr(&time_str_),
+              //              tickerIdToString(ticker_id), sideToString(side), qtyToString(qty),
+              //              riskCheckResultToString(risk_result));
           }
         }
           break;
@@ -126,7 +126,7 @@ namespace Trading {
     const RiskManager& risk_manager_;
 
     std::string time_str_;
-    Common::Logger *logger_ = nullptr;
+    //Common::Logger *logger_ = nullptr;
 
     /// Hash map container from TickerId -> Side -> OMOrder.
     OMOrderTickerSideHashMap ticker_side_order_;
