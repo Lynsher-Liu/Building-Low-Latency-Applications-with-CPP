@@ -68,7 +68,7 @@ private:
     SymbolName sym_;
 };
 
-// 策略管理器
+// 策略管理器, Strategies 是一个可变参数模板，接受任意数量的类型参数
 template<typename... Strategies>
 class StrategyManager : public EventSubscriber
 {
@@ -82,8 +82,12 @@ public:
 
 private:
     //EventBus& bus_;
-    std::tuple<Strategies...> strategies_;
-    // 分发表：交易所 -> 币对 -> 策略索引列表
+    std::tuple<Strategies...> strategies_; //保存所有传入的策略对象
+    
+    /**
+     * 两级哈希表：外层以交易所为键
+     * 内层以币对为键，值是一个 vector<size_t>，存放该（交易所，币对）组合感兴趣的所有策略在元组中的索引
+     */
     std::unordered_map<ExchangeName, std::unordered_map<SymbolName, std::vector<size_t>>> dispatch_table_;
     std::shared_ptr<common::ThreadPool> thread_pool_;
 
@@ -100,7 +104,10 @@ private:
         }, event);
     }
 
-    // 处理事件：提交到线程池
+    /**
+     * 根据事件的交易所和币对查表，获得策略索引列表
+     * 对每个索引，向线程池提交一个任务，该任务会调用 callStrategy(idx, pl)
+     */
     void onPriceLevel(const PriceLevel& pl) 
     {
         auto it = dispatch_table_.find(pl.exchange);
@@ -123,26 +130,41 @@ private:
     
     constexpr void buildDispatchTable() 
     {
+        /**
+         * auto idx 的类型实际上是一个编译期常量包装器（std::integral_constant），\
+         * 代表当前策略在元组中的索引（例如 0, 1, 2...）
+         */
         forEachIndex([this](auto idx) {
-            const auto& strat = std::get<idx>(strategies_);
-            auto interests = strat.interests();
+            const auto& strat = std::get<idx>(strategies_); //在编译期根据索引从元组中获取对应策略的引用
+            auto interests = strat.interests(); //调用策略的成员函数，返回它关注的 (Exchange, Symbol) 列表
             for (const auto& [exch, sym] : interests) {
-                dispatch_table_[exch][sym].push_back(idx);
+                dispatch_table_[exch][sym].push_back(idx); //将该策略的索引 idx（可隐式转换为 size_t）加入到对应 (exch, sym) 的向量中
             }
         });
     }
 
+    //为 strategies_ 元组中的每一个策略调用一次传入的 lambda
+    template<typename F>
+    void forEachIndex(F&& f) {
+        // std::index_sequence_for<Strategies...> 生成一个编译期整数序列 0,1,...,N-1（N 为策略个数）
+        forEachIndexImpl(std::forward<F>(f), std::index_sequence_for<Strategies...>{});
+    }
+
+    /**
+     * std::index_sequence<I...> 接收编译期整数序列 0,1,...,N-1（N 为策略个数）
+     * 
+     * std::integral_constant<size_t, I> 是一个类型，其实例可以隐式转换为 size_t 值，as idx 就是当前策略在元组中的索引
+     * 
+     * 折叠表达式 (f(std::integral_constant<size_t, I>{}), ...); 会将括号中的表达式依次用逗号展开，相当于依次调用：
+     * f(std::integral_constant<size_t, 0>{}), f(std::integral_constant<size_t, 1>{}), ...
+     */
     template<typename F, size_t... I>
     void forEachIndexImpl(F&& f, std::index_sequence<I...>) {
         (f(std::integral_constant<size_t, I>{}), ...);
     }
-    template<typename F>
-    void forEachIndex(F&& f) {
-        forEachIndexImpl(std::forward<F>(f), std::index_sequence_for<Strategies...>{});
-    }
 
     void callStrategy(size_t idx, const PriceLevel& pl) {
-        callStrategyImpl(idx, pl, std::index_sequence_for<Strategies...>{});
+        callStrategyImpl(idx, pl, std::index_sequence_for<Strategies...>{}); // 再次生成整数序列 0...N-1
     }
 
     template<size_t... I>

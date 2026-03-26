@@ -35,12 +35,14 @@ namespace Trading
 	class OrderBook {
 		using Traits = OrderBookTraits<E, S>;
 		// 静态数组存储深度（编译期确定大小）
-		std::array<double, Traits::depth> bids_;
-		std::array<double, Traits::depth> asks_;
+		std::array<Common::PriceLevel, Traits::depth> bids_;
+		std::array<Common::PriceLevel, Traits::depth> asks_;
+
+    BBO bbo_;
 
 	public:
 		// 更新价格档位（简化，实际需维护完整订单簿）
-		void onPricelevelUpdate(shared_ptr<const PriceLevel> pl) 
+		void onPricelevelUpdate(shared_ptr<const Common::PriceLevel> pl) 
 		{
 			// 价格对齐到交易所的最小变动价位
 			double aligned = std::round(pl->price / Traits::tick_size) * Traits::tick_size;
@@ -48,6 +50,16 @@ namespace Trading
 					<< " price=" << aligned << " size=" << pl->size << std::endl;
 			// 实际逻辑...
 		}
+
+    void onMarketUpdate(shared_ptr<const Common::Trade> market_update) 
+    {
+        // 处理市场更新，例如成交事件等
+        std::cout << Traits::name << " market update: " 
+                  << " price=" << market_update->price_ 
+                  << " qty=" << market_update->qty_ 
+                  << " type=" << static_cast<int>(market_update->type_) << std::endl;
+        // 实际逻辑...
+    }
 	};
 
 

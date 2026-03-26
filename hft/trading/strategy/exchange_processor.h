@@ -141,7 +141,7 @@ public:
                 if (it != orderbooks_.end()) {
                     // 根据币对调用对应的订单簿更新
                     std::visit([&](auto& book) {
-                        book.updatePriceLevel(pl);
+                        book.onPricelevelUpdate(pl);
                     }, it->second);
                 } else {
                     std::cerr << "Unknown symbol for exchange " << static_cast<int>(E) << std::endl;
