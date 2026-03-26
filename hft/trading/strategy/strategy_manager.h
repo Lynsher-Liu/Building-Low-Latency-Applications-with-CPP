@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2026-03-13 19:12:48
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-23 17:39:31
+ * @LastEditTime: 2026-03-26 16:33:34
  * @FilePath: /my_HFT/hft/trading/strategy/strategy_manager.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -62,7 +62,7 @@ public:
     }
     std::vector<std::pair<ExchangeName, SymbolName>> interests() const {
         // 关注所有交易所的该币对
-        return {{ExchangeName::EXCHANGE_BINANCE, sym_}, {ExchangeName::EXCHANGE_OKX, sym_}, {ExchangeName::EXCHANGE_BYBIT, sym_}};
+        return {{ExchangeName::BINANCE, sym_}, {ExchangeName::OKX, sym_}, {ExchangeName::BYBIT, sym_}};
     }
 private:
     SymbolName sym_;
@@ -73,18 +73,19 @@ template<typename... Strategies>
 class StrategyManager : public EventSubscriber
 {
 public:
-    StrategyManager(EventBus& bus, Strategies&&... strategies)
-        : EventSubscriber(bus, "StrategyManager"), strategies_(std::forward<Strategies>(strategies)...)
+    StrategyManager(EventBus& bus, const int& numaNode, Strategies&&... strategies)
+        : EventSubscriber(bus, "StrategyManager", numaNode), strategies_(std::forward<Strategies>(strategies)...)
     {
         buildDispatchTable();
+        thread_pool_ = common::ThreadPool::getInstance();
     }
 
 private:
-    EventBus& bus_;
+    //EventBus& bus_;
     std::tuple<Strategies...> strategies_;
     // 分发表：交易所 -> 币对 -> 策略索引列表
     std::unordered_map<ExchangeName, std::unordered_map<SymbolName, std::vector<size_t>>> dispatch_table_;
-    common::ThreadPool& thread_pool_ = common::ThreadPool::instance();
+    std::shared_ptr<common::ThreadPool> thread_pool_;
 
     void handleEvent(const Event& event) override 
     {
@@ -112,7 +113,7 @@ private:
                 for (size_t idx : indices) 
                 {
                     // 每个任务拷贝事件，独立处理
-                    thread_pool_.enqueue([this, idx, pl]() {
+                    thread_pool_->commit([this, idx, pl]() {
                         callStrategy(idx, pl);
                     });
                 }
@@ -146,7 +147,11 @@ private:
 
     template<size_t... I>
     void callStrategyImpl(size_t idx, const PriceLevel& pl, std::index_sequence<I...>) {
-        // 折叠表达式，依次比较索引并调用
+        /**
+         * 折叠表达式，依次比较索引并调用
+         * 如果相等，就调用 std::get<I>(strategies_).process(pl)，并返回 void() 作为逗号表达式的结果；
+         * 如果不相等，直接返回 void() 
+         *  */
         ((idx == I ? (std::get<I>(strategies_).process(pl), void()) : void()), ...);
     }
 };

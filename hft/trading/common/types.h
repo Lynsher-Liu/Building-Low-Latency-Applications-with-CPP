@@ -65,23 +65,23 @@ namespace Common
 	constexpr size_t ME_MAX_PRICE_LEVELS = 256;
 
 	enum class ExchangeName : uint8_t {
-		EXCHANGE_OKX = 0,
-		EXCHANGE_BINANCE = 1,
-		EXCHANGE_BYBIT = 2,
-		EXCHANGE_DERIBIT = 3
+		OKX = 0,
+		BINANCE = 1,
+		BYBIT = 2,
+		DERIBIT = 3
 	};
 
 inline std::string exchangeToString(ExchangeName exchange) 
 {
     switch (exchange) 
     {
-        case ExchangeName::EXCHANGE_OKX:
+        case ExchangeName::OKX:
             return "OKX";
-        case ExchangeName::EXCHANGE_BINANCE:
+        case ExchangeName::BINANCE:
             return "BINANCE";
-        case ExchangeName::EXCHANGE_BYBIT:
+        case ExchangeName::BYBIT:
             return "BYBIT";
-        case ExchangeName::EXCHANGE_DERIBIT:
+        case ExchangeName::DERIBIT:
             return "DERIBIT";
     }
 
@@ -243,7 +243,7 @@ enum SymbolName : uint8_t {
 // okx only provide these message info for each price level
 struct PriceLevel 
 {
-	ExchangeName exchange{ExchangeName::EXCHANGE_OKX};
+	ExchangeName exchange{ExchangeName::OKX};
     SymbolName symbol{SymbolName::BTC_USDT};
 	Side side{Side::INVALID};
 	uint32_t order_count{1};
@@ -259,8 +259,8 @@ struct PriceLevel
     uint32_t level{0}; 
     static int id;
     
-    PriceLevel() = default; // keep the default constructor for deque()
-	// 	exchange(ExchangeName::EXCHANGE_OKX), 
+    PriceLevel() = default; // keep the default constructor for event
+	// 	exchange(ExchangeName::OKX), 
 	// 	symbol(SymbolName::BTC_USDT), 
 	// 	side(Side::INVALID),
 	// 	price(0.0), 

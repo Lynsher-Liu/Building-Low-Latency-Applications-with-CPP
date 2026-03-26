@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <tuple>
 #include <map>
 #include <deque>
 
@@ -38,7 +39,7 @@
 #include <boost/algorithm/string.hpp>
 #include <cstdlib>
 
-static AsnLoggerPtr loggerH = ASN_GETLOGGER("websocket_h");
+static AsnLoggerPtr loggerWebsocketH = ASN_GETLOGGER("websocket_h");
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -106,7 +107,8 @@ private:
 };
 
 // Sends a WebSocket message and prints the response
-class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
+template <typename... Processors>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession<Processors...>>
 {
 private:
     tcp::resolver resolver_;
@@ -135,22 +137,47 @@ private:
     std::chrono::steady_clock::time_point last_pong_{};
     std::chrono::seconds backoff_{1};
 
-    Trading::ExchangeProcessor<ExchangeName::EXCHANGE_OKX>& exchangeProcessor; //TODO: put all exchangeProcessors& in ws client
+    std::tuple<std::reference_wrapper<Processors>...> processors_; // tuple of processor references
+
+    using ProcessorVariant = std::variant<Trading::ExchangeProcessor<ExchangeName::OKX>*,
+                                      Trading::ExchangeProcessor<ExchangeName::BINANCE>*,
+                                      Trading::ExchangeProcessor<ExchangeName::BYBIT>*,
+                                      Trading::ExchangeProcessor<ExchangeName::DERIBIT>*>;
+
+    // Runtime dispatch based on ExchangeName (cannot use if constexpr with runtime value)
+    // Returns variant holding pointer to appropriate processor type
+    ProcessorVariant getProcessor(ExchangeName exchange) noexcept {
+        switch (exchange) {
+            case ExchangeName::OKX:
+                return &std::get<0>(processors_).get();
+            case ExchangeName::BINANCE:
+                return &std::get<1>(processors_).get();
+            case ExchangeName::BYBIT:
+                return &std::get<2>(processors_).get();
+            case ExchangeName::DERIBIT:
+                return &std::get<3>(processors_).get();
+            default:
+                throw std::runtime_error("Invalid exchange type for processor dispatch");
+        }
+    }
+
 
 public:
     // Resolver and socket require an io_context
-    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, std::string target, Trading::ExchangeProcessor<ExchangeName::EXCHANGE_OKX>& exchange) :
-        resolver_(net::make_strand(ioc)),
-        ioc_(ioc),
-        //stream_(net::make_strand(ioc), ssl_ctx_),
-		ping_timer_(ioc),
-        retry_timer_(ioc),
-		b_private_session_(b_private_session),
-		target_(target),
-		m_router(router),
-		exchangeProcessor(exchange)
+    explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, 
+        std::string target, std::tuple<std::reference_wrapper<Processors>...> processors) :
+            resolver_(net::make_strand(ioc)),
+            ioc_(ioc),
+            //stream_(net::make_strand(ioc), ssl_ctx_),
+            ping_timer_(ioc),
+            retry_timer_(ioc),
+            target_(target),
+            host_(host),
+            b_private_session_(b_private_session),
+            processors_(processors),
+            m_router(router)           
     {
-		ASN_DEBUG(loggerH, "Start a new WebSocketSession");
+		ASN_DEBUG(loggerWebsocketH, "Start a new WebSocketSession");
 		m_topics.reserve(MAX_TOPIC_SIZE);
 
         // 延迟构造
@@ -199,7 +226,7 @@ public:
             port,
             beast::bind_front_handler(
                 &WebSocketSession::on_resolve,
-                shared_from_this()));
+                this->shared_from_this()));
     }
 
 	void close() 
@@ -209,7 +236,7 @@ public:
         retry_timer_.cancel(ec);
         stream_->next_layer().next_layer().cancel();
     	
-        net::post(stream_->get_executor(), [self = shared_from_this()]
+        net::post(stream_->get_executor(), [self = this->shared_from_this()]
 		{
 			beast::error_code ec;
 			self->stream_->close(ws::close_code::normal, ec);
@@ -245,7 +272,7 @@ private:
     void set_state(WsConnectState s)
     {
         m_state = s;
-		ASN_DEBUG(loggerH, "[STATE] -> " << state_name(s));
+		ASN_DEBUG(loggerWebsocketH, "[STATE] -> " << state_name(s));
     }
 
     void on_resolve(beast::error_code ec, tcp::resolver::results_type results)
@@ -263,7 +290,7 @@ private:
             results,
             beast::bind_front_handler(
                 &WebSocketSession::on_connect,
-                shared_from_this()));
+                this->shared_from_this()));
     }
 
     void on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type ep)
@@ -284,7 +311,7 @@ private:
         stream_->next_layer().async_handshake(ssl::stream_base::client,
             beast::bind_front_handler(
                 &WebSocketSession::on_ssl_handshake,
-                shared_from_this()));
+                this->shared_from_this()));
     }
 
 	void on_ssl_handshake(beast::error_code ec)
@@ -315,7 +342,7 @@ private:
         stream_->async_handshake(host_, target_,
             beast::bind_front_handler(
                 &WebSocketSession::on_handshake,
-                shared_from_this()));
+                this->shared_from_this()));
     }
 
     void on_handshake(beast::error_code ec)
@@ -342,7 +369,7 @@ private:
 
 	void do_read() {
 		stream_->async_read(inbuf_,
-		    beast::bind_front_handler(&WebSocketSession::on_read, shared_from_this()));
+		    beast::bind_front_handler(&WebSocketSession::on_read, this->shared_from_this()));
 	}
 
 	void on_read(beast::error_code ec, std::size_t bytes) 
@@ -362,11 +389,11 @@ private:
         if(content.is_discarded())
         {
             // 非 JSON 帧（或 pong），忽略
-            ASN_TRACE(loggerH, "No json frame, maybe pong, ignore");
+            ASN_TRACE(loggerWebsocketH, "No json frame, maybe pong, ignore");
         }
         else
         {
-			//ASN_TRACE(loggerH, "recv msg = " << content);
+			//ASN_TRACE(loggerWebsocketH, "recv msg = " << content);
             if (content.contains("event"))
             {
                 try
@@ -386,25 +413,25 @@ private:
                     }
                     else if (ev == "error")
                     {
-                        ASN_ERROR(loggerH, "recv error msg = " << content.dump() << "\n");
+                        ASN_ERROR(loggerWebsocketH, "recv error msg = " << content.dump() << "\n");
                         // 订阅出错可选择只重发该订阅；此处简单化处理为重连
                         return reconnect("server-error-event", beast::error_code{});
                     }
                     else if (ev == "notice")
                     {
-                        ASN_ERROR(loggerH, "recv OKX notice = " << content.dump() << "\n");
+                        ASN_ERROR(loggerWebsocketH, "recv OKX notice = " << content.dump() << "\n");
                         // receive notice event from OKX, 用户会在如下场景收到此类信息：Websocket服务升级断线. 在推送服务升级前60秒会推送信息，用户可以重新建立新的连接避免由于断线造成的影响。
                         return reconnect("server-notice-event", beast::error_code{});
                     }
 					else if (ev == "channel-conn-count")
 					{
-                        ASN_TRACE(loggerH, "recv channel-conn-count msg = " << content.dump() << "\n");
+                        ASN_TRACE(loggerWebsocketH, "recv channel-conn-count msg = " << content.dump() << "\n");
 						// do nothing
 					}
                 }
                 catch(const std::exception& e)
                 {
-					ASN_ERROR(loggerH, "Exception in handling json: " << e.what());
+					ASN_ERROR(loggerWebsocketH, "Exception in handling json: " << e.what());
                 }                          
             }
             // put data msg into PriceLevelHandler queue or TradeHandler, not directly call the callback
@@ -414,7 +441,7 @@ private:
 
                 //auto clock = timer ::TradingClock::getInstance();
                 auto curTime = timer::getCurMicroTime();
-                auto exchange = ExchangeName::EXCHANGE_OKX; // TODO: obtain exchange name from msg
+                auto exchange = ExchangeName::OKX; // TODO: obtain exchange name from msg
                 Side side;
 
                 try
@@ -440,9 +467,13 @@ private:
                             uint32_t order_count = bids[i][3];                        
                             uint32_t level = i;
 
-                            exchangeProcessor.writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            std::visit([&](auto* proc) {
+                                proc->writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            }, getProcessor(exchange));
+
+                            //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
                         }
-                        
+
                         json& asks = content["arg"]["data"]["asks"];   
                         side = Side::SELL;    
                         for (unsigned int i = 0; i < asks.size(); ++i)
@@ -452,7 +483,11 @@ private:
                             uint32_t order_count = asks[i][3];                        
                             uint32_t level = i;
 
-                            exchangeProcessor.writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            std::visit([&](auto* proc) {
+                                proc->writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            }, getProcessor(exchange));
+
+                            //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
                         }                   
                     }
                     else if (content["arg"]["channel"] == "trades")
@@ -468,12 +503,14 @@ private:
                         const char* trade_id = data["trade_id"].get<std::string>().c_str();	
                         timer::TimeStamp timestamp = data["timestamp"].get<timer::TimeStamp>();
 
-                        exchangeProcessor.writeTradeMsg2Queue(exchange, symbol, count, side, price, quantity, seqId, source, trade_id, timestamp);                    
+                        std::visit([&](auto* proc) {
+                            proc->writeTradeMsg2Queue(exchange, symbol, count, side, price, quantity, seqId, source, trade_id, timestamp);
+                        }, getProcessor(exchange));                    
                     }
                 }
                 catch(const std::exception& e)
                 {
-                    ASN_ERROR(loggerH, "Exception in handling json: " << e.what());
+                    ASN_ERROR(loggerWebsocketH, "Exception in handling json: " << e.what());
                 }
             }       		    
         }
@@ -485,7 +522,7 @@ private:
 	void do_write() {
 		// 只要队列不空，就把队首拿出来写
 		stream_->async_write(net::buffer(outbox_.front()),
-			beast::bind_front_handler(&WebSocketSession::on_write, shared_from_this()));
+			beast::bind_front_handler(&WebSocketSession::on_write, this->shared_from_this()));
 	}
 
 	void on_write(beast::error_code ec, std::size_t bytes_transferred) {
@@ -505,7 +542,7 @@ private:
 	void send(std::string msg) 
 	{
 		net::post(stream_->get_executor(),
-		[self = shared_from_this(), m = std::move(msg)]() mutable 
+		[self = this->shared_from_this(), m = std::move(msg)]() mutable 
 		{
 			//std::cout << "add msg to send = " << m << "\n";
 			self->outbox_.emplace_back(std::move(m));
@@ -528,7 +565,7 @@ private:
 			full_path = std::string(cwd) + "/config/.env";
 			if (stat(full_path.c_str(), &buffer) != 0) [[unlikely]]
 			{
-				ASN_ERROR(loggerH, "Failed to find env path = " << full_path);
+				ASN_ERROR(loggerWebsocketH, "Failed to find env path = " << full_path);
 				return;
 			}
 		}
@@ -544,7 +581,7 @@ private:
         // 3. 安全检查（必须做！）
         if (!api_key_ptr || !passphrase_ptr || !api_secretkey_ptr) [[unlikely]]
 		{
-            ASN_ERROR(loggerH,  "错误: 无法从环境变量中读取完整的API凭证, 请检查 .env 文件是否存在且格式正确\n");
+            ASN_ERROR(loggerWebsocketH,  "错误: 无法从环境变量中读取完整的API凭证, 请检查 .env 文件是否存在且格式正确\n");
             return; 
         }
         
@@ -611,7 +648,7 @@ private:
     void schedule_ping()
     {
         ping_timer_.expires_after(20s);
-        ping_timer_.async_wait([self=shared_from_this()](beast::error_code ec)
+        ping_timer_.async_wait([self = this->shared_from_this()](beast::error_code ec)
 		{
             if(ec) return; // 可能是 cancel
             // 发 ping
@@ -646,7 +683,7 @@ private:
         // 退避
         backoff_ = std::min(backoff_ * 2, 30s);
         retry_timer_.expires_after(backoff_);
-        retry_timer_.async_wait([self=shared_from_this()](beast::error_code ec2)
+        retry_timer_.async_wait([self = this->shared_from_this()](beast::error_code ec2)
 		{
             if(ec2) return; // 被取消
             // 重新构造底层流（重要！）
@@ -723,23 +760,24 @@ private:
     }
 };
 
-
+template <typename... Processors>
 class AsyncWebsocketClient
 {
 public:
-	explicit AsyncWebsocketClient(net::io_context& ioc, std::string host, std::string port, int numaNode = 0) :
+	explicit AsyncWebsocketClient(net::io_context& ioc, std::string host, std::string port, int numaNode, Processors&... processors) :
 		m_ioc(ioc),
 		m_host(host),
 		m_port(port),
-		bindToNumaNode(numaNode)
+        processors_(std::ref(processors)...),
+		bindToNumaNode(numaNode)		
 		{
-			m_router.register_route("^books5\\|BTC-USDT$", [this](const json& msg) {handle_books5_BTC_USDT(msg);});
-			m_router.register_route("^trades\\|BTC-USDT$", [this](const json& msg) {handle_trades_BTC_USDT(msg);});
-			m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
+			// m_router.register_route("^books5\\|BTC-USDT$", [this](const json& msg) {handle_books5_BTC_USDT(msg);});
+			// m_router.register_route("^trades\\|BTC-USDT$", [this](const json& msg) {handle_trades_BTC_USDT(msg);});
+			// m_router.register_route("^bbo-tbt\\|BTC-USDT$", [this](const json& msg) {handle_bbo_tbt_BTC_USDT(msg);});
 			
-			m_router.register_route("account", [this](const json& msg) {handle_account_update(msg);});
-			m_router.register_route("positions", [this](const json& msg) {handle_positions_update(msg);});
-			m_router.register_route("balance_and_position", [this](const json& msg) {handle_balance_and_position_update(msg);});
+			// m_router.register_route("account", [this](const json& msg) {handle_account_update(msg);});
+			// m_router.register_route("positions", [this](const json& msg) {handle_positions_update(msg);});
+			// m_router.register_route("balance_and_position", [this](const json& msg) {handle_balance_and_position_update(msg);});
 		}
     
     ~AsyncWebsocketClient() 
@@ -756,7 +794,7 @@ public:
 		m_stop.store(false);
 		m_worker_thread = Common::createAndStartThread(bindToNumaNode, "Trading/websocket", [this]() { run(); });
 		if (!m_worker_thread)
-			ASN_ERROR(loggerH, "Failed to start websocket thread");
+			ASN_ERROR(loggerWebsocketH, "Failed to start websocket thread");
     }
 
     auto stop() -> void 
@@ -778,13 +816,18 @@ public:
 
 	void run()
     {
-		m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target);
+		m_publicSession = std::make_shared<WebSocketSession<Processors...>>(m_ioc, false, m_router, m_host.c_str(), m_public_target, 
+			//std::get<0>(processors_), std::get<1>(processors_), std::get<2>(processors_), std::get<3>(processors_));
+            processors_);
 		m_publicSession->addTopic({{"channel", "books5"}, {"instId", "BTC-USDT"}});
 		m_publicSession->addTopic({{"channel", "trades"}, {"instId", "BTC-USDT"}});
 		m_publicSession->addTopic({{"channel", "bbo-tbt"}, {"instId", "BTC-USDT"}}); // only best bid/ask price size, 10ms, no depth structure
 		m_publicSession->run(m_host.c_str(), m_port.c_str());
 
-		m_privateSession = std::make_shared<WebSocketSession>(m_ioc, true, m_router, m_host.c_str(), m_private_target);
+		m_privateSession = std::make_shared<WebSocketSession<Processors...>>(m_ioc, true, m_router, m_host.c_str(), m_private_target,
+			//std::get<0>(processors_), std::get<1>(processors_), std::get<2>(processors_), std::get<3>(processors_));
+            processors_);
+
 		m_privateSession->addTopic({{"channel", "account"},
 					{"extraParams", "{\"updateInterval\":\"0\"}"}});
 		m_privateSession->addTopic({{"channel", "positions"},
@@ -798,26 +841,28 @@ public:
 
 private:
     //public session callback
-    void handle_books5_BTC_USDT(const json& msg);
-	void handle_trades_BTC_USDT(const json& msg);
-	void handle_bbo_tbt_BTC_USDT(const json& msg);
+    // void handle_books5_BTC_USDT(const json& msg);
+	// void handle_trades_BTC_USDT(const json& msg);
+	// void handle_bbo_tbt_BTC_USDT(const json& msg);
 
-    //private session callback
-	void handle_account_update(const json& msg);
-	void handle_positions_update(const json& msg);
-	void handle_balance_and_position_update(const json& msg);
+    // //private session callback
+	// void handle_account_update(const json& msg);
+	// void handle_positions_update(const json& msg);
+	// void handle_balance_and_position_update(const json& msg);
 
 private:
-	std::string m_host{""};
-	std::string m_port{""};
+	const std::string m_host{""};
+	const std::string m_port{""};
 
-	std::shared_ptr<WebSocketSession> m_publicSession;
-	std::shared_ptr<WebSocketSession> m_privateSession;
-
-	std::string m_public_target{"/ws/v5/public?brokerId=9999"};
-    std::string m_private_target{"/ws/v5/private?brokerId=9999"};
+	const std::string m_public_target{"/ws/v5/public?brokerId=9999"};
+    const std::string m_private_target{"/ws/v5/private?brokerId=9999"};
 
 	WsRouter m_router;
+
+	std::tuple<std::reference_wrapper<Processors>...> processors_;
+
+    std::shared_ptr<WebSocketSession<Processors...>> m_publicSession;
+	std::shared_ptr<WebSocketSession<Processors...>> m_privateSession;
 
 private:
     std::thread* m_worker_thread;
@@ -828,22 +873,5 @@ private:
 	// The io_context is required for all I/O
     net::io_context& m_ioc;
 };
-
-
-#if 0
-int test() {
-  net::io_context ioc;
-  auto c = std::make_shared<WsClient>(ioc,
-      "wspap.okx.com", "8443", "/ws/v5/public?brokerId=9999");
-  c->run();
-
-  // 示例：后台线程/定时器里随时 send（这里简单用 post）
-  net::steady_timer t{ioc, std::chrono::seconds(5)};
-  t.async_wait([c](auto){ c->send(R"({"op":"ping"})"); });
-
-  ioc.run();
-}
-#endif
-
 
 }

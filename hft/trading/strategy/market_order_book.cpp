@@ -3,13 +3,13 @@
 #include "trade_engine.h"
 
 namespace Trading {
-  MarketOrderBook::MarketOrderBook(TickerId ticker_id, Logger *logger)
-      : ticker_id_(ticker_id), orders_at_price_pool_(ME_MAX_PRICE_LEVELS), order_pool_(ME_MAX_ORDER_IDS), logger_(logger) {
+  MarketOrderBook::MarketOrderBook(TickerId ticker_id)//, Logger *logger
+      : ticker_id_(ticker_id), orders_at_price_pool_(ME_MAX_PRICE_LEVELS), order_pool_(ME_MAX_ORDER_IDS) {
   }
 
   MarketOrderBook::~MarketOrderBook() {
-    logger_->log("%:% %() % OrderBook\n%\n", __FILE__, __LINE__, __FUNCTION__,
-                 Common::getCurrentTimeStr(&time_str_), toString(false, true));
+    // logger_->log("%:% %() % OrderBook\n%\n", __FILE__, __LINE__, __FUNCTION__,
+    //              Common::getCurrentTimeStr(&time_str_), toString(false, true));
 
     trade_engine_ = nullptr;
     bids_by_price_ = asks_by_price_ = nullptr;
@@ -73,8 +73,8 @@ namespace Trading {
 
     updateBBO(bid_updated, ask_updated);
 
-    logger_->log("%:% %() % % %", __FILE__, __LINE__, __FUNCTION__,
-                 Common::getCurrentTimeStr(&time_str_), market_update->toString(), bbo_.toString());
+    // logger_->log("%:% %() % % %", __FILE__, __LINE__, __FUNCTION__,
+    //              Common::getCurrentTimeStr(&time_str_), market_update->toString(), bbo_.toString());
 
     trade_engine_->onOrderBookUpdate(market_update->ticker_id_, market_update->price_, market_update->side_, this);
   }

@@ -4,6 +4,7 @@
 #include "order_gw/order_gateway.h"
 #include "market_data/market_data_consumer.h"
 #include "market_data/websocket.h"
+#include "strategy/strategy_manager.h"
 
 #include "common/timer.h"
 #include "common/affinity.h"
@@ -25,11 +26,29 @@ int main(int argc, char **argv)
 
 	ASN_INITLOG("./config/trading.log.properties");
 
+	// 1. Initiate common components like EventBus, IO context, etc.
+	Common::EventBus bus;
 	boost::asio::io_context ioc;
 	const int bindToNumaNode = affinity::get_least_loaded_numa_node();
 
-	Market::AsyncWebsocketClient* wsclient = new Market::AsyncWebsocketClient(ioc, "wspap.okx.com", "8443", bindToNumaNode);
-	wsclient->start();
+	// Create ExchangeProcessors for each exchange
+	Trading::ExchangeProcessor<ExchangeName::OKX> okx_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::BINANCE> binance_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::BYBIT> bybit_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::DERIBIT> deribit_processor(bus, bindToNumaNode);
+
+	// Tuple of processors
+	//auto processors = std::make_tuple(std::ref(okx_processor), std::ref(binance_processor), std::ref(bybit_processor), std::ref(deribit_processor));
+
+	// 2. Create strategies and strategy manager, who subscribes to the EventBus and automatically run
+	Trading::StrategyManager<Trading::SimpleMM, Trading::CrossExArb> strategy_manager(bus, bindToNumaNode, Trading::SimpleMM(ExchangeName::OKX, SymbolName::BTC_USDT), Trading::CrossExArb(SymbolName::BTC_USDT));
+
+	// 3. start the websocket client to consume market data and feed into the corresponding ExchangeProcessor
+	Market::AsyncWebsocketClient<Trading::ExchangeProcessor<ExchangeName::OKX>, Trading::ExchangeProcessor<ExchangeName::BINANCE>, Trading::ExchangeProcessor<ExchangeName::BYBIT>, Trading::ExchangeProcessor<ExchangeName::DERIBIT>>* wsclient 
+    	= new Market::AsyncWebsocketClient<Trading::ExchangeProcessor<ExchangeName::OKX>, Trading::ExchangeProcessor<ExchangeName::BINANCE>, Trading::ExchangeProcessor<ExchangeName::BYBIT>, Trading::ExchangeProcessor<ExchangeName::DERIBIT>>(ioc, "wspap.okx.com", "8443", bindToNumaNode,
+			okx_processor, binance_processor, bybit_processor, deribit_processor);
+	
+  	wsclient->start();
 
 	boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
 	signals.async_wait([&ioc, wsclient](const boost::system::error_code&, int) 
@@ -49,132 +68,131 @@ int main(int argc, char **argv)
 	ASN_INFO(logger_main,  "------------------IO event loop runs, block here------------------");
 	ASN_INFO(logger_main,  "------------------------------------------------------------------\n\n\n\n");
   
-  ioc.run(); // block here until m_ioc stops
-  ASN_INFO(logger_main, "IO event loop stopped successfully");
+	ioc.run(); // block here until m_ioc stops
+	ASN_INFO(logger_main, "IO event loop stopped successfully");
 
-  return 0;
+	return 0;
 
-  const Common::ClientId client_id = atoi(argv[1]);
-  srand(client_id);
+	const Common::ClientId client_id = atoi(argv[1]);
+	srand(client_id);
 
-  const auto algo_type = stringToAlgoType(argv[2]);
+	const auto algo_type = stringToAlgoType(argv[2]);
 
-  //logger = new Common::Logger("trading_main_" + std::to_string(client_id) + ".log");
+	//logger = new Common::Logger("trading_main_" + std::to_string(client_id) + ".log");
 
-  const int sleep_time = 20 * 1000;
+	const int sleep_time = 20 * 1000;
 
-  // The lock free queues to facilitate communication between order gateway <-> trade engine and market data consumer -> trade engine.
-  Exchange::ClientRequestLFQueue client_requests(ME_MAX_CLIENT_UPDATES);
-  Exchange::ClientResponseLFQueue client_responses(ME_MAX_CLIENT_UPDATES);
-  Exchange::MEMarketUpdateLFQueue market_updates(ME_MAX_MARKET_UPDATES);
+	// The lock free queues to facilitate communication between order gateway <-> trade engine and market data consumer -> trade engine.
+	Exchange::ClientRequestLFQueue client_requests(ME_MAX_CLIENT_UPDATES);
+	Exchange::ClientResponseLFQueue client_responses(ME_MAX_CLIENT_UPDATES);
+	Exchange::MEMarketUpdateLFQueue market_updates(ME_MAX_MARKET_UPDATES);
 
-  Common::EventBus bus;
+	std::string time_str;
 
-  std::string time_str;
+	TradeEngineCfgHashMap ticker_cfg;
 
-  TradeEngineCfgHashMap ticker_cfg;
+	// Parse and initialize the TradeEngineCfgHashMap above from the command line arguments.
+	// [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...
+	size_t next_ticker_id = 0;
+	for (int i = 3; i < argc; i += 5, ++next_ticker_id) {
+		ticker_cfg.at(next_ticker_id) = {static_cast<Qty>(std::atoi(argv[i])), std::atof(argv[i + 1]),
+										{static_cast<Qty>(std::atoi(argv[i + 2])),
+										static_cast<Qty>(std::atoi(argv[i + 3])),
+										std::atof(argv[i + 4])}};
+	}
 
-  // Parse and initialize the TradeEngineCfgHashMap above from the command line arguments.
-  // [CLIP_1 THRESH_1 MAX_ORDER_SIZE_1 MAX_POS_1 MAX_LOSS_1] [CLIP_2 THRESH_2 MAX_ORDER_SIZE_2 MAX_POS_2 MAX_LOSS_2] ...
-  size_t next_ticker_id = 0;
-  for (int i = 3; i < argc; i += 5, ++next_ticker_id) {
-    ticker_cfg.at(next_ticker_id) = {static_cast<Qty>(std::atoi(argv[i])), std::atof(argv[i + 1]),
-                                     {static_cast<Qty>(std::atoi(argv[i + 2])),
-                                      static_cast<Qty>(std::atoi(argv[i + 3])),
-                                      std::atof(argv[i + 4])}};
-  }
+	//logger->log("%:% %() % Starting Trade Engine...\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str));
+	trade_engine = new Trading::TradeEngine(client_id, algo_type,
+											ticker_cfg,
+											&client_requests,
+											&client_responses,
+											&market_updates,
+											bus,
+											bindToNumaNode);
+	trade_engine->start();
 
-  //logger->log("%:% %() % Starting Trade Engine...\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str));
-  trade_engine = new Trading::TradeEngine(client_id, algo_type,
-                                          ticker_cfg,
-                                          &client_requests,
-                                          &client_responses,
-                                          &market_updates,
-                                          &bus);
-  trade_engine->start();
+	const std::string order_gw_ip = "127.0.0.1";
+	const std::string order_gw_iface = "lo";
+	const int order_gw_port = 12345;
 
-  const std::string order_gw_ip = "127.0.0.1";
-  const std::string order_gw_iface = "lo";
-  const int order_gw_port = 12345;
+	//logger->log("%:% %() % Starting Order Gateway...\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str));
+	order_gateway = new Trading::OrderGateway(client_id, &client_requests, &client_responses, order_gw_ip, order_gw_iface, order_gw_port);
+	order_gateway->start();
 
-  //logger->log("%:% %() % Starting Order Gateway...\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str));
-  order_gateway = new Trading::OrderGateway(client_id, &client_requests, &client_responses, order_gw_ip, order_gw_iface, order_gw_port);
-  order_gateway->start();
+	const std::string mkt_data_iface = "lo";
+	const std::string snapshot_ip = "233.252.14.1";
+	const int snapshot_port = 20000;
+	const std::string incremental_ip = "233.252.14.3";
+	const int incremental_port = 20001;
 
-  const std::string mkt_data_iface = "lo";
-  const std::string snapshot_ip = "233.252.14.1";
-  const int snapshot_port = 20000;
-  const std::string incremental_ip = "233.252.14.3";
-  const int incremental_port = 20001;
+	//logger->log("%:% %() % Starting Market Data Consumer...\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str));
+	//market_data_consumer = new Trading::MarketDataConsumer(client_id, &market_updates, mkt_data_iface, snapshot_ip, snapshot_port, incremental_ip, incremental_port);
+	//market_data_consumer->start();
 
-  //logger->log("%:% %() % Starting Market Data Consumer...\n", __FILE__, __LINE__, __FUNCTION__, Common::getCurrentTimeStr(&time_str));
-  //market_data_consumer = new Trading::MarketDataConsumer(client_id, &market_updates, mkt_data_iface, snapshot_ip, snapshot_port, incremental_ip, incremental_port);
-  //market_data_consumer->start();
+	usleep(10 * 1000 * 1000);
 
-  usleep(10 * 1000 * 1000);
+	trade_engine->initLastEventTime();
 
-  trade_engine->initLastEventTime();
+	// For the random trading algorithm, we simply implement it here instead of creating a new trading algorithm which is another possibility.
+	// Generate random orders with random attributes and randomly cancel some of them.
+	if (algo_type == AlgoType::RANDOM) {
+		Common::OrderId order_id = client_id * 1000;
+		std::vector<Exchange::MEClientRequest> client_requests_vec;
+		std::array<Price, ME_MAX_TICKERS> ticker_base_price;
+		for (size_t i = 0; i < ME_MAX_TICKERS; ++i)
+		ticker_base_price[i] = (rand() % 100) + 100;
+		for (size_t i = 0; i < 10000; ++i) {
+		const Common::TickerId ticker_id = rand() % Common::ME_MAX_TICKERS;
+		const Price price = ticker_base_price[ticker_id] + (rand() % 10) + 1;
+		const Qty qty = 1 + (rand() % 100) + 1;
+		const Side side = (rand() % 2 ? Common::Side::BUY : Common::Side::SELL);
 
-  // For the random trading algorithm, we simply implement it here instead of creating a new trading algorithm which is another possibility.
-  // Generate random orders with random attributes and randomly cancel some of them.
-  if (algo_type == AlgoType::RANDOM) {
-    Common::OrderId order_id = client_id * 1000;
-    std::vector<Exchange::MEClientRequest> client_requests_vec;
-    std::array<Price, ME_MAX_TICKERS> ticker_base_price;
-    for (size_t i = 0; i < ME_MAX_TICKERS; ++i)
-      ticker_base_price[i] = (rand() % 100) + 100;
-    for (size_t i = 0; i < 10000; ++i) {
-      const Common::TickerId ticker_id = rand() % Common::ME_MAX_TICKERS;
-      const Price price = ticker_base_price[ticker_id] + (rand() % 10) + 1;
-      const Qty qty = 1 + (rand() % 100) + 1;
-      const Side side = (rand() % 2 ? Common::Side::BUY : Common::Side::SELL);
+		Exchange::MEClientRequest new_request{Exchange::ClientRequestType::NEW, client_id, ticker_id, order_id++, side,
+												price, qty};
+		trade_engine->sendClientRequest(&new_request);
+		usleep(sleep_time);
 
-      Exchange::MEClientRequest new_request{Exchange::ClientRequestType::NEW, client_id, ticker_id, order_id++, side,
-                                            price, qty};
-      trade_engine->sendClientRequest(&new_request);
-      usleep(sleep_time);
+		client_requests_vec.push_back(new_request);
+		const auto cxl_index = rand() % client_requests_vec.size();
+		auto cxl_request = client_requests_vec[cxl_index];
+		cxl_request.type_ = Exchange::ClientRequestType::CANCEL;
+		trade_engine->sendClientRequest(&cxl_request);
+		usleep(sleep_time);
 
-      client_requests_vec.push_back(new_request);
-      const auto cxl_index = rand() % client_requests_vec.size();
-      auto cxl_request = client_requests_vec[cxl_index];
-      cxl_request.type_ = Exchange::ClientRequestType::CANCEL;
-      trade_engine->sendClientRequest(&cxl_request);
-      usleep(sleep_time);
+		if (trade_engine->silentSeconds() >= 60) {
+			// logger->log("%:% %() % Stopping early because been silent for % seconds...\n", __FILE__, __LINE__, __FUNCTION__,
+			//             Common::getCurrentTimeStr(&time_str), trade_engine->silentSeconds());
 
-      if (trade_engine->silentSeconds() >= 60) {
-        // logger->log("%:% %() % Stopping early because been silent for % seconds...\n", __FILE__, __LINE__, __FUNCTION__,
-        //             Common::getCurrentTimeStr(&time_str), trade_engine->silentSeconds());
+			break;
+		}
+		}
+	}
 
-        break;
-      }
-    }
-  }
+	while (trade_engine->silentSeconds() < 60) {
+		// logger->log("%:% %() % Waiting till no activity, been silent for % seconds...\n", __FILE__, __LINE__, __FUNCTION__,
+		//             Common::getCurrentTimeStr(&time_str), trade_engine->silentSeconds());
 
-  while (trade_engine->silentSeconds() < 60) {
-    // logger->log("%:% %() % Waiting till no activity, been silent for % seconds...\n", __FILE__, __LINE__, __FUNCTION__,
-    //             Common::getCurrentTimeStr(&time_str), trade_engine->silentSeconds());
+		using namespace std::literals::chrono_literals;
+		std::this_thread::sleep_for(30s);
+	}
 
-    using namespace std::literals::chrono_literals;
-    std::this_thread::sleep_for(30s);
-  }
+	trade_engine->stop();
+	//market_data_consumer->stop();
+	order_gateway->stop();
 
-  trade_engine->stop();
-  //market_data_consumer->stop();
-  order_gateway->stop();
+	using namespace std::literals::chrono_literals;
+	std::this_thread::sleep_for(10s);
 
-  using namespace std::literals::chrono_literals;
-  std::this_thread::sleep_for(10s);
+	//delete logger;
+	//logger = nullptr;
+	delete trade_engine;
+	trade_engine = nullptr;
+	//delete market_data_consumer;
+	//market_data_consumer = nullptr;
+	delete order_gateway;
+	order_gateway = nullptr;
 
-  //delete logger;
-  //logger = nullptr;
-  delete trade_engine;
-  trade_engine = nullptr;
-  //delete market_data_consumer;
-  //market_data_consumer = nullptr;
-  delete order_gateway;
-  order_gateway = nullptr;
+	std::this_thread::sleep_for(10s);
 
-  std::this_thread::sleep_for(10s);
-
-  exit(EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }

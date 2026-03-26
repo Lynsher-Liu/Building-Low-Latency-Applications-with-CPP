@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-24 18:09:34
+ * @LastEditTime: 2026-03-26 15:43:48
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -39,30 +39,29 @@ template<ExchangeName E>
 class ExchangeProcessor
 {
 private:
-    //static thread_local MemPool<PriceLevel> priceLevelPool; // 每个线程维护一个本地内存池
-    moodycamel::ConcurrentQueue<shared_ptr<const PriceLevel>> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
-    
-    //static thread_local MemPool<Trade> tradePool; // 每个线程维护一个本地内存池
-    moodycamel::ConcurrentQueue<shared_ptr<const Trade>> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
-
-    std::atomic_bool m_stop;
-    std::thread* m_worker_thread;
-
-    int bindToNumaNode{0}; //TODO: check binding which numa node
-    affinity::PmrMemoryNumaAllocator numa_allocator{bindToNumaNode}; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
-
     /// Hash map container from TickerId -> MarketOrderBook.
-    MarketOrderBookHashMap ticker_order_book_;
+    //MarketOrderBookHashMap ticker_order_book_;
 
+    const int& bindToNumaNode;
+    affinity::PmrMemoryNumaAllocator numa_allocator; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
+
+    std::atomic_bool m_stop{false};
+    std::thread* m_worker_thread;
     EventBus& bus_;
 
+    moodycamel::ConcurrentQueue<shared_ptr<const PriceLevel>> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
+    moodycamel::ConcurrentQueue<shared_ptr<const Trade>> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
+
+    static constexpr size_t DEPTH = (E == ExchangeName::OKX) ? 5 : 50;
+    static constexpr double TICK_SIZE = (E == ExchangeName::OKX) ? 0.01 : 0.1;
+
 public:
-    ExchangeProcessor(EventBus& bus) : bus_(bus)
+    ExchangeProcessor(EventBus& bus, const int& numaNode) : bus_(bus), bindToNumaNode(numaNode), numa_allocator(numaNode)
     {
         // 初始化ticker_order_book_，为每个symbol创建一个MarketOrderBook实例
-        for (size_t i = 0; i < ME_MAX_TICKERS; ++i) {
-            ticker_order_book_[i] = new MarketOrderBook();
-        }
+        // for (size_t i = 0; i < ME_MAX_TICKERS; ++i) {
+        //     ticker_order_book_[i] = new MarketOrderBook();
+        // }
     }
 
     ~ExchangeProcessor()
@@ -71,17 +70,15 @@ public:
     }
 
     template<typename... Args>
-    void writePriceLevelMsg2Queue(Args&&... args) { 
-        // 从内存池分配一个新的PriceLevel对象，并将数据复制到该对象中
-        //PriceLevel* pl = priceLevelPool.allocate(std::forward<Args>(args)...);
+    void writePriceLevelMsg2Queue(Args&&... args) 
+    { 
         shared_ptr<const PriceLevel> pl =numa_allocator.produceSharedPtr<PriceLevel>(std::forward<Args>(args)...); // 使用NUMA-aware allocator分配PriceLevel对象
         priceLevelQueue.enqueue(pl);
     }
 
     template<typename... Args>
-    void writeTradeMsg2Queue(Args&&... args) { 
-        // 从内存池分配一个新的Trade对象，并将数据复制到该对象中
-        //Trade* trade = tradePool.allocate(std::forward<Args>(args)...);
+    void writeTradeMsg2Queue(Args&&... args) 
+    { 
         shared_ptr<const Trade> trade = numa_allocator.produceSharedPtr<Trade>(std::forward<Args>(args)...); // 使用NUMA-aware allocator分配Trade对象
         tradeQueue.enqueue(trade);
     }
@@ -90,9 +87,9 @@ public:
     auto start() -> void
     {
 		m_stop.store(false);
-		m_worker_thread = Common::createAndStartThread(bindToNumaNode, "Trading/ExchangeProcessor"+exchangeToString(E), [this]() { run(); });
+		m_worker_thread = Common::createAndStartThread(bindToNumaNode, "Trading/ExchangeProcessor"+Common::exchangeToString(E), [this]() { run(); });
 		if (!m_worker_thread)
-			ASN_ERROR(loggerH, "Failed to start ExchangeProcessor thread for exchange: " + exchangeToString(E));
+			ASN_ERROR(loggerH, "Failed to start ExchangeProcessor thread for exchange: " + Common::exchangeToString(E));
     }
 
     auto stop() -> void 
@@ -101,8 +98,6 @@ public:
 		
 		// 给一点时间让会话优雅关闭（可选）
         std::this_thread::sleep_for(100ms);
-
-		//m_ioc.stop();
 
 		if (m_worker_thread && m_worker_thread->joinable())
 			m_worker_thread->join();
@@ -119,11 +114,17 @@ public:
                 //auto buffer = struct_pack::serialize<std::string>(*(pl.get())); TODO: check using it
                 ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString()); //pl->toString()
 
+                if constexpr (E == ExchangeName::OKX) {
+                    //parseBinanceMessage(raw_msg);
+                    
+                } else if constexpr (E == ExchangeName::BINANCE) {
+                    //parseOKXMessage(raw_msg);
+                    
+                }
+
                 //ticker_order_book_[pl->symbol].onPricelevelUpdate(pl);
 
                 bus_.publish(Event(pl)); // publish to event bus
-                // 处理完后将对象返回内存池
-                //priceLevelPool.deallocate(pl);
             }
 
             // 处理Trade对象
@@ -133,9 +134,6 @@ public:
                 ASN_INFO(loggerH, "Processing Trade: " + trade->toString());
 
                 bus_.publish(Event(trade)); // publish to event bus
-                
-                // 处理完后将对象返回内存池
-                //tradePool.deallocate(trade);
             }
 
             // 可以添加适当的睡眠以避免忙等待，或者使用条件变量来优化等待机制

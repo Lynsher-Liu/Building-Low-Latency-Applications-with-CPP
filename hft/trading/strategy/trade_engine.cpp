@@ -7,14 +7,15 @@ namespace Trading {
                            Exchange::ClientRequestLFQueue *client_requests,
                            Exchange::ClientResponseLFQueue *client_responses,
                            Exchange::MEMarketUpdateLFQueue *market_updates,
-                           Common::EventBus& bus)
+                           Common::EventBus& bus,
+                           const int& numaNode)
       : client_id_(client_id), outgoing_ogw_requests_(client_requests), incoming_ogw_responses_(client_responses),
         incoming_md_updates_(market_updates), //logger_("trading_engine_" + std::to_string(client_id) + ".log"),
         bus_(bus),
         feature_engine_(), //&logger_
         position_keeper_(), //&logger_
         order_manager_(this, risk_manager_), //&logger_, 
-        risk_manager_(bus_, &position_keeper_, ticker_cfg) { //&logger_, 
+        risk_manager_(bus_, numaNode, &position_keeper_, ticker_cfg) { //&logger_, 
     for (size_t i = 0; i < ticker_order_book_.size(); ++i) {
       ticker_order_book_[i] = new MarketOrderBook(i); //, &logger_
       ticker_order_book_[i]->setTradeEngine(this);

@@ -31,7 +31,8 @@ namespace Trading {
                 Exchange::ClientRequestLFQueue *client_requests,
                 Exchange::ClientResponseLFQueue *client_responses,
                 Exchange::MEMarketUpdateLFQueue *market_updates,
-                Common::EventBus& bus);
+                Common::EventBus& bus,
+                const int& numaNode);
 
     ~TradeEngine();
 

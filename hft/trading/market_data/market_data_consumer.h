@@ -19,6 +19,7 @@
 #include <json/json.hpp>
 #include <deque>
 
+#if 0
 #include "concurrentqueue/concurrentqueue.h"
 #include <folly/concurrency/ConcurrentHashMap.h>
 
@@ -34,7 +35,7 @@ using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;
 using namespace boost::placeholders;
 
-#if 0
+
 namespace Trading 
 {
   class MarketDataConsumer {

@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:34
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-24 18:08:47
+ * @LastEditTime: 2026-03-25 16:22:12
  * @FilePath: /my_HFT/hft/common/time_utils.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -71,8 +71,8 @@ class EventSubscriber
 public:
     static int id_counter;
 
-    EventSubscriber(EventBus& bus, std::string name)
-        : bus_(bus), name_(std::move(name)), m_stop(false) 
+    EventSubscriber(EventBus& bus, std::string name, const int& numaNode)
+        : bus_(bus), name_(std::move(name)), bindToNumaNode(numaNode), m_stop(false) 
     {
         id_counter++;
         bus_.subscribe(this);
@@ -87,7 +87,7 @@ public:
     void start()
     {
 		m_stop.store(false);
-		m_worker_thread = Common::createAndStartThread(-1, "Subscriber-"+std::to_string(id_counter), [this]() { run(); });
+		m_worker_thread = Common::createAndStartThread(bindToNumaNode, "Subscriber-"+std::to_string(id_counter), [this]() { run(); });
 		if (!m_worker_thread)
 			ASN_ERROR(loggerEventBus_h, "Failed to start Subscriber-"+std::to_string(id_counter));
     }
@@ -131,6 +131,7 @@ private:
         }
     }
 
+    const int& bindToNumaNode;
     EventBus& bus_;
     std::string name_;
     std::atomic<bool> m_stop{false};

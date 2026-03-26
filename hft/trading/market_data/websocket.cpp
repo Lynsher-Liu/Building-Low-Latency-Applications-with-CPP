@@ -52,6 +52,7 @@ void WsRouter::route_request(json msg)
     }
 }
 
+#if 0
 /**
  * @brief handle depth data of top 5 bid/ask
  * 数量: 合并了该价位所有挂单的总量
@@ -94,7 +95,8 @@ void WsRouter::route_request(json msg)
         ]
     }
  */
-void AsyncWebsocketClient::handle_books5_BTC_USDT(const json& msg)
+template<typename... Processors>
+void AsyncWebsocketClient<Processors...>::handle_books5_BTC_USDT(const json& msg)
 {
     ASN_TRACE(logger, "enter handle_books5_BTC_USDT, msg: " << msg << "\n");
     //TODO: simply process then put into queue
@@ -134,7 +136,8 @@ void AsyncWebsocketClient::handle_books5_BTC_USDT(const json& msg)
     ]
 }
  */
-void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT(const json& msg)
+template<typename... Processors>
+void AsyncWebsocketClient<Processors...>::handle_bbo_tbt_BTC_USDT(const json& msg)
 {
     ASN_TRACE(logger, "enter handle_bbo_tbt_BTC_USDT, msg: " << msg << "\n");
 }
@@ -169,7 +172,8 @@ void AsyncWebsocketClient::handle_bbo_tbt_BTC_USDT(const json& msg)
         ]
     }
  */
-void AsyncWebsocketClient::handle_trades_BTC_USDT(const json& msg)
+template<typename... Processors>
+void AsyncWebsocketClient<Processors...>::handle_trades_BTC_USDT(const json& msg)
 {
     ASN_TRACE(logger, "enter handle_trades_BTC_USDT, msg: " << msg << "\n");
     //TODO: simply process then put into queue
@@ -194,7 +198,8 @@ void AsyncWebsocketClient::handle_trades_BTC_USDT(const json& msg)
     "lastPage": true
 }
  */
-void AsyncWebsocketClient::handle_account_update(const json& msg)
+template<typename... Processors>
+void AsyncWebsocketClient<Processors...>::handle_account_update(const json& msg)
 {
     ASN_TRACE(logger, "enter handle_account_update, msg: " << msg << "\n");
 }
@@ -218,7 +223,8 @@ void AsyncWebsocketClient::handle_account_update(const json& msg)
     "lastPage": true
 }
  */
-void AsyncWebsocketClient::handle_positions_update(const json& msg)
+template<typename... Processors>
+void AsyncWebsocketClient<Processors...>::handle_positions_update(const json& msg)
 {
     ASN_TRACE(logger, "enter handle_positions_update, msg: " << msg << "\n");
 }
@@ -260,11 +266,13 @@ void AsyncWebsocketClient::handle_positions_update(const json& msg)
     ]
 }
  */
-void AsyncWebsocketClient::handle_balance_and_position_update(const json& msg)
+template<typename... Processors>
+void AsyncWebsocketClient<Processors...>::handle_balance_and_position_update(const json& msg)
 {
     ASN_TRACE(logger, "enter handle_balance_and_position_update, msg: " << msg << "\n");
 }
 
+#endif
 
 
 }

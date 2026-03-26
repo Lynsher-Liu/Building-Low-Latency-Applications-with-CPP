@@ -76,8 +76,8 @@ typedef std::array<RiskInfo, ME_MAX_TICKERS> TickerRiskInfoHashMap;
 class RiskManager : public EventSubscriber
 {
 public:
-    RiskManager(EventBus& bus, const PositionKeeper *position_keeper, const TradeEngineCfgHashMap &ticker_cfg)
-        : EventSubscriber(bus, "RiskManager"), position_keeper_(position_keeper) 
+    RiskManager(EventBus& bus, const int& numaNode, const PositionKeeper *position_keeper, const TradeEngineCfgHashMap &ticker_cfg)
+        : EventSubscriber(bus, "RiskManager", numaNode), position_keeper_(position_keeper) 
     {
       for (TickerId i = 0; i < ticker_cfg.size(); ++i) {
         ticker_risk_.at(i).position_info_ = position_keeper_->getPositionInfo(i);
