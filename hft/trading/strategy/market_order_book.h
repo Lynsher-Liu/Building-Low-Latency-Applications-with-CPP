@@ -6,7 +6,52 @@
 #include "market_order.h"
 #include "exchange/market_data/market_update.h"
 
-namespace Trading {
+namespace Trading 
+{
+	// -------------------- 交易所 + 币对 特性萃取 --------------------
+	// 根据交易所和币对，提供编译期常量（如深度、最小变动价位）
+	template<ExchangeName E, SymbolName S>
+	struct OrderBookTraits;
+
+	// OKX BTCUSDT 特性
+	template<>
+	struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
+		static constexpr size_t depth = 5;
+		static constexpr double tick_size = 0.01;
+		static constexpr const char* name = "OKX BTCUSDT";
+	};
+
+	// OKX BTCUSDT_SWAP 特性
+	template<>
+	struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
+		static constexpr size_t depth = 5;
+		static constexpr double tick_size = 0.01;
+		static constexpr const char* name = "OKX BTC_USDT_SWAP";
+	};
+
+
+	// -------------------- OrderBook 模板类 --------------------
+	template<ExchangeName E, SymbolName S>
+	class OrderBook {
+		using Traits = OrderBookTraits<E, S>;
+		// 静态数组存储深度（编译期确定大小）
+		std::array<double, Traits::depth> bids_;
+		std::array<double, Traits::depth> asks_;
+
+	public:
+		// 更新价格档位（简化，实际需维护完整订单簿）
+		void onPricelevelUpdate(shared_ptr<const PriceLevel> pl) 
+		{
+			// 价格对齐到交易所的最小变动价位
+			double aligned = std::round(pl->price / Traits::tick_size) * Traits::tick_size;
+			std::cout << Traits::name << " updated: " << (pl->is_bid ? "bid" : "ask")
+					<< " price=" << aligned << " size=" << pl->size << std::endl;
+			// 实际逻辑...
+		}
+	};
+
+
+
   class TradeEngine;
 
   class MarketOrderBook final {

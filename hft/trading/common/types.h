@@ -93,6 +93,35 @@ enum SymbolName : uint8_t {
     BTC_USDT_SWAP = 1
 };
 
+inline std::string symbolToString(SymbolName symbol) 
+{
+    switch (symbol) 
+    {
+        case SymbolName::BTC_USDT:
+            return "BTC_USDT";
+        case SymbolName::BTC_USDT_SWAP:
+            return "BTC_USDT_SWAP";
+    }
+    return "UNKNOWN";
+}
+
+inline std::string exchangeToString(ExchangeName exchange) 
+{
+    switch (exchange) 
+    {
+        case ExchangeName::OKX:
+            return "OKX";
+        case ExchangeName::BINANCE:
+            return "BINANCE";
+        case ExchangeName::BYBIT:
+            return "BYBIT";
+        case ExchangeName::DERIBIT:
+            return "DERIBIT";
+    }
+
+    return "UNKNOWN";
+}
+
 
 	typedef uint64_t OrderId;
 	constexpr auto OrderId_INVALID = std::numeric_limits<OrderId>::max();

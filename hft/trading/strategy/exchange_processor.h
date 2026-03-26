@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-26 15:43:48
+ * @LastEditTime: 2026-03-26 19:06:21
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -42,6 +42,15 @@ private:
     /// Hash map container from TickerId -> MarketOrderBook.
     //MarketOrderBookHashMap ticker_order_book_;
 
+    // 使用 variant 存储不同币对的订单簿（因为每个 OrderBook 类型不同）
+    using OrderBookVariant = std::variant<
+        OrderBook<E, SymbolName::BTC_USDT>,
+        OrderBook<E, SymbolName::BTC_USDT_SWAP>
+    >;
+    
+    // 币对 -> 订单簿 variant 的映射
+    std::unordered_map<SymbolName, OrderBookVariant> orderbooks_;
+
     const int& bindToNumaNode;
     affinity::PmrMemoryNumaAllocator numa_allocator; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
 
@@ -62,6 +71,11 @@ public:
         // for (size_t i = 0; i < ME_MAX_TICKERS; ++i) {
         //     ticker_order_book_[i] = new MarketOrderBook();
         // }
+
+        orderbooks_ = {
+            {SymbolName::BTC_USDT, OrderBook<E, SymbolName::BTC_USDT>{}},
+            {SymbolName::BTC_USDT_SWAP, OrderBook<E, SymbolName::BTC_USDT_SWAP>{}}
+        };
     }
 
     ~ExchangeProcessor()
@@ -123,6 +137,15 @@ public:
                 }
 
                 //ticker_order_book_[pl->symbol].onPricelevelUpdate(pl);
+                auto it = orderbooks_.find(pl->symbol);
+                if (it != orderbooks_.end()) {
+                    // 根据币对调用对应的订单簿更新
+                    std::visit([&](auto& book) {
+                        book.updatePriceLevel(pl);
+                    }, it->second);
+                } else {
+                    std::cerr << "Unknown symbol for exchange " << static_cast<int>(E) << std::endl;
+                }
 
                 bus_.publish(Event(pl)); // publish to event bus
             }
@@ -147,9 +170,19 @@ private:
     
 };
 
-class ExchangeProcessorMap
+class ExchangeManager
 {
 private:
+
+public:
+    // ExchangeManager(EventBus& bus, const int& numaNode) : bus_(bus), numaNode_(numaNode) 
+    // {
+    //     根据需要创建不同交易所的处理器实例
+    //     okx_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::OKX>>(bus_, numaNode_);
+    //     binance_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::BINANCE>>(bus_, numaNode_);
+    // }
+
+
 };
 
 }
