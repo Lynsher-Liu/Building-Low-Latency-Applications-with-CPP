@@ -105,23 +105,6 @@ inline std::string symbolToString(SymbolName symbol)
     return "UNKNOWN";
 }
 
-inline std::string exchangeToString(ExchangeName exchange) 
-{
-    switch (exchange) 
-    {
-        case ExchangeName::OKX:
-            return "OKX";
-        case ExchangeName::BINANCE:
-            return "BINANCE";
-        case ExchangeName::BYBIT:
-            return "BYBIT";
-        case ExchangeName::DERIBIT:
-            return "DERIBIT";
-    }
-
-    return "UNKNOWN";
-}
-
 
 	typedef uint64_t OrderId;
 	constexpr auto OrderId_INVALID = std::numeric_limits<OrderId>::max();

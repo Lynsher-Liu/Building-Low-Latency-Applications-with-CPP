@@ -5,51 +5,133 @@
 #include "common/timer.h"
 #include "market_order.h"
 #include "exchange/market_data/market_update.h"
+#include "feature_engine.h"
 
 namespace Trading 
 {
-	// -------------------- 交易所 + 币对 特性萃取 --------------------
-	// 根据交易所和币对，提供编译期常量（如深度、最小变动价位）
-	template<ExchangeName E, SymbolName S>
-	struct OrderBookTraits;
+// -------------------- 交易所 + 币对 特性萃取 --------------------
+// 根据交易所和币对，提供编译期常量（如深度、最小变动价位）
+template<ExchangeName E, SymbolName S>
+struct OrderBookTraits
+{
+	static constexpr size_t depth = 10;          // 默认深度
+	static constexpr double tick_size = 0.01;    // 默认 tick size
+	static constexpr const char* name = "Default";
+};
 
-	// OKX BTCUSDT 特性
-	template<>
-	struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
-		static constexpr size_t depth = 5;
-		static constexpr double tick_size = 0.01;
-		static constexpr const char* name = "OKX BTCUSDT";
-	};
+// OKX BTCUSDT 特性
+template<>
+struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
+	static constexpr size_t depth = 5;
+	static constexpr double tick_size = 0.01;
+	static constexpr const char* name = "OKX BTCUSDT";
+};
 
-	// OKX BTCUSDT_SWAP 特性
-	template<>
-	struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
-		static constexpr size_t depth = 5;
-		static constexpr double tick_size = 0.01;
-		static constexpr const char* name = "OKX BTC_USDT_SWAP";
-	};
+// OKX BTCUSDT_SWAP 特性
+template<>
+struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
+	static constexpr size_t depth = 5;
+	static constexpr double tick_size = 0.01;
+	static constexpr const char* name = "OKX BTC_USDT_SWAP";
+};
 
 
-	// -------------------- OrderBook 模板类 --------------------
-	template<ExchangeName E, SymbolName S>
-	class OrderBook {
-		using Traits = OrderBookTraits<E, S>;
-		// 静态数组存储深度（编译期确定大小）
-		std::array<double, Traits::depth> bids_;
-		std::array<double, Traits::depth> asks_;
+// -------------------- OrderBook 模板类 --------------------
+template<ExchangeName E, SymbolName S>
+class OrderBook 
+{
+private:
+	using Traits = OrderBookTraits<E, S>;
+	// 静态数组存储深度（编译期确定大小）
+	std::array<Common::PriceLevel, Traits::depth> bids_;
+	std::array<Common::PriceLevel, Traits::depth> asks_;
 
-	public:
-		// 更新价格档位（简化，实际需维护完整订单簿）
-		void onPricelevelUpdate(shared_ptr<const PriceLevel> pl) 
+	BBO bbo_;
+	FeatureEngine& feature_engine_; // 引用特征引擎，用于更新特征
+
+public:
+	// 更新价格档位, maybe called by books5 or bbo-tbt
+	void onPricelevelUpdate(std::shared_ptr<const Common::PriceLevel> pl) 
+	{
+		// 价格对齐到交易所的最小变动价位
+		// double aligned = std::round(pl->price / Traits::tick_size) * Traits::tick_size;
+		// std::cout << Traits::name << " updated: " << (pl->is_bid ? "bid" : "ask")
+		// 		<< " price=" << aligned << " size=" << pl->size << std::endl;
+		// 实际逻辑...
+		if (pl->side == Common::Side::BUY) 
 		{
-			// 价格对齐到交易所的最小变动价位
-			double aligned = std::round(pl->price / Traits::tick_size) * Traits::tick_size;
-			std::cout << Traits::name << " updated: " << (pl->is_bid ? "bid" : "ask")
-					<< " price=" << aligned << " size=" << pl->size << std::endl;
-			// 实际逻辑...
-		}
-	};
+			if (pl->level < Traits::depth) [[likely]] // 确保不越界
+			{
+				bids_[pl->level] = *pl; // 简化：直接覆盖，实际需根据价格位置插入/删除档位
+				updateBBO(true, false); // 更新BBO的买一价
+				feature_engine_.onOrderBookUpdate(E, S, getBBO());
+			}				
+		} 
+		else 
+		{
+			if (pl->level < Traits::depth) [[likely]] // 确保不越界
+			{
+				asks_[pl->level] = *pl;
+				updateBBO(false, true); // 更新BBO的卖一价
+				feature_engine_.onOrderBookUpdate(E, S, getBBO());
+			}				
+		}		
+	}
 
+	const double bestBid() const { return bids_[0].price; }
+	const double bestAsk() const { return asks_[0].price; }
+
+	auto toString() const 
+	{
+		std::stringstream ss;
+		ss << "OrderBook - " << Traits::name << "\n";
+		ss << "Bids:\n";
+		for (size_t i = 0; i < Traits::depth; ++i) {
+		ss << "  Level " << i << ": Price=" << bids_[i].price << " Size=" << bids_[i].quantity << "\n";
+		}
+		ss << "Asks:\n";
+		for (size_t i = 0; i < Traits::depth; ++i) {
+		ss << "  Level " << i << ": Price=" << asks_[i].price << " Size=" << asks_[i].quantity << "\n";
+		}
+		return ss.str();
+	}
+
+private:
+	auto updateBBO(bool update_bid, bool update_ask) noexcept 
+	{
+		if(update_bid) 
+		{
+			if(bids_[0].price != 0.0)  // 简单检查是否有有效价格
+			{ 
+				bbo_.bid_price_ = bids_[0].price;
+				bbo_.bid_qty_ = bids_[0].quantity;
+			}
+			else 
+			{
+				bbo_.bid_price_ = Price_INVALID;
+				bbo_.bid_qty_ = Qty_INVALID;
+			}
+		}
+		if(update_ask) 
+		{
+			if(asks_[0].price != 0.0) // 简单检查是否有有效价格
+			{ 
+				bbo_.ask_price_ = asks_[0].price;
+				bbo_.ask_qty_ = asks_[0].quantity;
+			}
+			else 
+			{
+				bbo_.ask_price_ = Price_INVALID;
+				bbo_.ask_qty_ = Qty_INVALID;
+			}
+		}
+    }
+
+    const BBO* getBBO() const noexcept 
+	{
+      return &bbo_;
+    }
+};
 
 
   class TradeEngine;

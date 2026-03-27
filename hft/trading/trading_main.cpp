@@ -31,22 +31,21 @@ int main(int argc, char **argv)
 	boost::asio::io_context ioc;
 	const int bindToNumaNode = affinity::get_least_loaded_numa_node();
 
-	// Create ExchangeProcessors for each exchange
+	// 2. Create ExchangeProcessors for each exchange and put them into the exchangeManager
 	Trading::ExchangeProcessor<ExchangeName::OKX> okx_processor(bus, bindToNumaNode);
 	Trading::ExchangeProcessor<ExchangeName::BINANCE> binance_processor(bus, bindToNumaNode);
 	Trading::ExchangeProcessor<ExchangeName::BYBIT> bybit_processor(bus, bindToNumaNode);
 	Trading::ExchangeProcessor<ExchangeName::DERIBIT> deribit_processor(bus, bindToNumaNode);
 
-	// Tuple of processors
-	//auto processors = std::make_tuple(std::ref(okx_processor), std::ref(binance_processor), std::ref(bybit_processor), std::ref(deribit_processor));
+	Trading::ExchangeManager exchangeManager = Trading::ExchangeManager(okx_processor, binance_processor, bybit_processor, deribit_processor);
 
-	// 2. Create strategies and strategy manager, who subscribes to the EventBus and automatically run
+	// 3. Create the websocket client to consume market data and feed into the corresponding ExchangeProcessor	
+	Market::AsyncWebsocketClient* wsclient 
+    	= new Market::AsyncWebsocketClient(ioc, "wspap.okx.com", "8443", bindToNumaNode, exchangeManager);
+
+	// 3. Create strategies and strategy manager, who subscribes to the EventBus and automatically run
 	Trading::StrategyManager<Trading::SimpleMM, Trading::CrossExArb> strategy_manager(bus, bindToNumaNode, Trading::SimpleMM(ExchangeName::OKX, SymbolName::BTC_USDT), Trading::CrossExArb(SymbolName::BTC_USDT));
 
-	// 3. start the websocket client to consume market data and feed into the corresponding ExchangeProcessor
-	Market::AsyncWebsocketClient<Trading::ExchangeProcessor<ExchangeName::OKX>, Trading::ExchangeProcessor<ExchangeName::BINANCE>, Trading::ExchangeProcessor<ExchangeName::BYBIT>, Trading::ExchangeProcessor<ExchangeName::DERIBIT>>* wsclient 
-    	= new Market::AsyncWebsocketClient<Trading::ExchangeProcessor<ExchangeName::OKX>, Trading::ExchangeProcessor<ExchangeName::BINANCE>, Trading::ExchangeProcessor<ExchangeName::BYBIT>, Trading::ExchangeProcessor<ExchangeName::DERIBIT>>(ioc, "wspap.okx.com", "8443", bindToNumaNode,
-			okx_processor, binance_processor, bybit_processor, deribit_processor);
 	
   	wsclient->start();
 

@@ -107,8 +107,8 @@ private:
 };
 
 // Sends a WebSocket message and prints the response
-template <typename... Processors>
-class WebSocketSession : public std::enable_shared_from_this<WebSocketSession<Processors...>>
+//template <typename... Processors>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
 private:
     tcp::resolver resolver_;
@@ -137,35 +137,13 @@ private:
     std::chrono::steady_clock::time_point last_pong_{};
     std::chrono::seconds backoff_{1};
 
-    std::tuple<std::reference_wrapper<Processors>...> processors_; // tuple of processor references
-
-    using ProcessorVariant = std::variant<Trading::ExchangeProcessor<ExchangeName::OKX>*,
-                                      Trading::ExchangeProcessor<ExchangeName::BINANCE>*,
-                                      Trading::ExchangeProcessor<ExchangeName::BYBIT>*,
-                                      Trading::ExchangeProcessor<ExchangeName::DERIBIT>*>;
-
-    // Runtime dispatch based on ExchangeName (cannot use if constexpr with runtime value)
-    // Returns variant holding pointer to appropriate processor type
-    ProcessorVariant getProcessor(ExchangeName exchange) noexcept {
-        switch (exchange) {
-            case ExchangeName::OKX:
-                return &std::get<0>(processors_).get();
-            case ExchangeName::BINANCE:
-                return &std::get<1>(processors_).get();
-            case ExchangeName::BYBIT:
-                return &std::get<2>(processors_).get();
-            case ExchangeName::DERIBIT:
-                return &std::get<3>(processors_).get();
-            default:
-                throw std::runtime_error("Invalid exchange type for processor dispatch");
-        }
-    }
-
-
+    //std::tuple<std::reference_wrapper<Processors>...> processors_; // tuple of processor references
+    Trading::ExchangeManager& exchangeManager_; // reference to the exchange manager for dispatching messages to processors
+    
 public:
     // Resolver and socket require an io_context
     explicit WebSocketSession(net::io_context& ioc, bool b_private_session, WsRouter& router, char const* host, 
-        std::string target, std::tuple<std::reference_wrapper<Processors>...> processors) :
+        std::string target, Trading::ExchangeManager& exchangeManager) :
             resolver_(net::make_strand(ioc)),
             ioc_(ioc),
             //stream_(net::make_strand(ioc), ssl_ctx_),
@@ -174,7 +152,7 @@ public:
             target_(target),
             host_(host),
             b_private_session_(b_private_session),
-            processors_(processors),
+            exchangeManager_(exchangeManager),
             m_router(router)           
     {
 		ASN_DEBUG(loggerWebsocketH, "Start a new WebSocketSession");
@@ -439,9 +417,9 @@ private:
             {
                 //m_router.route_request(content); TODO: move the router to exchange processor
 
-                //auto clock = timer ::TradingClock::getInstance();
                 auto curTime = timer::getCurMicroTime();
-                auto exchange = ExchangeName::OKX; // TODO: obtain exchange name from msg
+                auto exchange = ExchangeName::OKX;// TODO: obtain exchange name from msg
+                auto exchangeProcessor = exchangeManager_.getProcessor(exchange) ; 
                 Side side;
 
                 try
@@ -458,7 +436,7 @@ private:
                                             
                     if (content["arg"]["channel"] == "bbo-tbt" || content["arg"]["channel"] == "books5")
                     {             
-                        json& bids = content["arg"]["data"]["bids"];  
+                        json& bids = content["data"]["bids"];  
                         side = Side::BUY;     
                         for (unsigned int i = 0; i < bids.size(); ++i)
                         {
@@ -469,12 +447,10 @@ private:
 
                             std::visit([&](auto* proc) {
                                 proc->writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
-                            }, getProcessor(exchange));
-
-                            //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            }, exchangeProcessor);
                         }
 
-                        json& asks = content["arg"]["data"]["asks"];   
+                        json& asks = content["data"]["asks"];   
                         side = Side::SELL;    
                         for (unsigned int i = 0; i < asks.size(); ++i)
                         {
@@ -485,14 +461,12 @@ private:
 
                             std::visit([&](auto* proc) {
                                 proc->writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
-                            }, getProcessor(exchange));
-
-                            //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            }, exchangeProcessor);
                         }                   
                     }
                     else if (content["arg"]["channel"] == "trades")
                     {
-                        json& data = content["arg"]["data"];
+                        json& data = content["data"];
                         Side side = data["side"] == "buy" ? Side::BUY : Side::SELL;                        
                         double price = std::stod(data["px"].get<std::string>());
                         double quantity = std::stod(data["sz"].get<std::string>());
@@ -505,12 +479,12 @@ private:
 
                         std::visit([&](auto* proc) {
                             proc->writeTradeMsg2Queue(exchange, symbol, count, side, price, quantity, seqId, source, trade_id, timestamp);
-                        }, getProcessor(exchange));                    
+                        }, exchangeProcessor);                    
                     }
                 }
                 catch(const std::exception& e)
                 {
-                    ASN_ERROR(loggerWebsocketH, "Exception in handling json: " << e.what());
+                    ASN_ERROR(loggerWebsocketH, "Exception: " << e.what() << "in handling json: " << content);
                 }
             }       		    
         }
@@ -760,16 +734,16 @@ private:
     }
 };
 
-template <typename... Processors>
+
 class AsyncWebsocketClient
 {
 public:
-	explicit AsyncWebsocketClient(net::io_context& ioc, std::string host, std::string port, int numaNode, Processors&... processors) :
+	explicit AsyncWebsocketClient(net::io_context& ioc, std::string host, std::string port, int numaNode, Trading::ExchangeManager& exchangeManager) :
 		m_ioc(ioc),
 		m_host(host),
 		m_port(port),
-        processors_(std::ref(processors)...),
-		bindToNumaNode(numaNode)		
+		bindToNumaNode(numaNode),
+		exchangeManager_(exchangeManager)
 		{
 			// m_router.register_route("^books5\\|BTC-USDT$", [this](const json& msg) {handle_books5_BTC_USDT(msg);});
 			// m_router.register_route("^trades\\|BTC-USDT$", [this](const json& msg) {handle_trades_BTC_USDT(msg);});
@@ -816,17 +790,13 @@ public:
 
 	void run()
     {
-		m_publicSession = std::make_shared<WebSocketSession<Processors...>>(m_ioc, false, m_router, m_host.c_str(), m_public_target, 
-			//std::get<0>(processors_), std::get<1>(processors_), std::get<2>(processors_), std::get<3>(processors_));
-            processors_);
+		m_publicSession = std::make_shared<WebSocketSession>(m_ioc, false, m_router, m_host.c_str(), m_public_target, exchangeManager_);
 		m_publicSession->addTopic({{"channel", "books5"}, {"instId", "BTC-USDT"}});
 		m_publicSession->addTopic({{"channel", "trades"}, {"instId", "BTC-USDT"}});
 		m_publicSession->addTopic({{"channel", "bbo-tbt"}, {"instId", "BTC-USDT"}}); // only best bid/ask price size, 10ms, no depth structure
 		m_publicSession->run(m_host.c_str(), m_port.c_str());
 
-		m_privateSession = std::make_shared<WebSocketSession<Processors...>>(m_ioc, true, m_router, m_host.c_str(), m_private_target,
-			//std::get<0>(processors_), std::get<1>(processors_), std::get<2>(processors_), std::get<3>(processors_));
-            processors_);
+		m_privateSession = std::make_shared<WebSocketSession>(m_ioc, true, m_router, m_host.c_str(), m_private_target, exchangeManager_);
 
 		m_privateSession->addTopic({{"channel", "account"},
 					{"extraParams", "{\"updateInterval\":\"0\"}"}});
@@ -859,10 +829,10 @@ private:
 
 	WsRouter m_router;
 
-	std::tuple<std::reference_wrapper<Processors>...> processors_;
+	Trading::ExchangeManager& exchangeManager_;
 
-    std::shared_ptr<WebSocketSession<Processors...>> m_publicSession;
-	std::shared_ptr<WebSocketSession<Processors...>> m_privateSession;
+    std::shared_ptr<WebSocketSession> m_publicSession;
+	std::shared_ptr<WebSocketSession> m_privateSession;
 
 private:
     std::thread* m_worker_thread;
