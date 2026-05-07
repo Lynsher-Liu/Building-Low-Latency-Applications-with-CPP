@@ -10,6 +10,7 @@
 #include "common/timer.h"
 #include "market_order.h"
 #include "exchange/market_data/market_update.h"
+#include "feature_engine.h"
 
 namespace Trading 
 {
@@ -25,7 +26,21 @@ struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
 	static constexpr double tick_size = 0.01;
 	static constexpr const char* name = "OKX BTCUSDT";
 };
+// OKX BTCUSDT 特性
+template<>
+struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
+	static constexpr size_t depth = 5;
+	static constexpr double tick_size = 0.01;
+	static constexpr const char* name = "OKX BTCUSDT";
+};
 
+// OKX BTCUSDT_SWAP 特性
+template<>
+struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
+	static constexpr size_t depth = 5;
+	static constexpr double tick_size = 0.01;
+	static constexpr const char* name = "OKX BTC_USDT_SWAP";
+};
 // OKX BTCUSDT_SWAP 特性
 template<>
 struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {

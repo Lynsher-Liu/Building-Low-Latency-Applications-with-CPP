@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-26 19:06:21
+ * @LastEditTime: 2026-03-27 18:14:06
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -97,6 +97,21 @@ public:
         tradeQueue.enqueue(trade);
     }
 
+    void getOrderbook(SymbolName symbol) 
+    {
+        auto it = orderbooks_.find(symbol);
+        if (it != orderbooks_.end()) {
+            std::visit([](auto& book) {
+                // 这里可以调用订单簿的接口，例如获取BBO等
+                double best_bid = book.bestBid();
+                double best_ask = book.bestAsk();
+                ASN_INFO(loggerH, "Best Bid: " + std::to_string(best_bid) + ", Best Ask: " + std::to_string(best_ask));
+            }, it->second);
+        } else {
+            ASN_ERROR(loggerH, "Unknown symbol: " + Common::symbolToString(symbol));
+        }
+    }
+
 
     auto start() -> void
     {
@@ -179,17 +194,53 @@ private:
     
 };
 
+
+//template <typename... Processors>
 class ExchangeManager
 {
 private:
+    //std::tuple<Processors...> processors_;
+    Trading::ExchangeProcessor<ExchangeName::OKX>& okx_processor_;
+    Trading::ExchangeProcessor<ExchangeName::BINANCE>& binance_processor_;
+    Trading::ExchangeProcessor<ExchangeName::BYBIT>& bybit_processor_;
+    Trading::ExchangeProcessor<ExchangeName::DERIBIT>& deribit_processor_;
 
 public:
-    // ExchangeManager(EventBus& bus, const int& numaNode) : bus_(bus), numaNode_(numaNode) 
-    // {
-    //     根据需要创建不同交易所的处理器实例
-    //     okx_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::OKX>>(bus_, numaNode_);
-    //     binance_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::BINANCE>>(bus_, numaNode_);
-    // }
+    ExchangeManager(Trading::ExchangeProcessor<ExchangeName::OKX>& okx_processor,
+                    Trading::ExchangeProcessor<ExchangeName::BINANCE>& binance_processor,
+                    Trading::ExchangeProcessor<ExchangeName::BYBIT>& bybit_processor,
+                    Trading::ExchangeProcessor<ExchangeName::DERIBIT>& deribit_processor) : 
+        okx_processor_(okx_processor),
+        binance_processor_(binance_processor),
+        bybit_processor_(bybit_processor),
+        deribit_processor_(deribit_processor)
+    {
+        // 根据需要创建不同交易所的处理器实例
+        // okx_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::OKX>>(bus_, numaNode_);
+        // binance_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::BINANCE>>(bus_, numaNode_);
+    }
+
+    using ProcessorVariant = std::variant<Trading::ExchangeProcessor<ExchangeName::OKX>*,
+                                      Trading::ExchangeProcessor<ExchangeName::BINANCE>*,
+                                      Trading::ExchangeProcessor<ExchangeName::BYBIT>*,
+                                      Trading::ExchangeProcessor<ExchangeName::DERIBIT>*>;
+
+    // Runtime dispatch based on ExchangeName (cannot use if constexpr with runtime value)
+    // Returns variant holding pointer to appropriate processor type
+    ProcessorVariant getProcessor(ExchangeName exchange) const noexcept {
+        switch (exchange) {
+            case ExchangeName::OKX:
+                return &okx_processor_;
+            case ExchangeName::BINANCE:
+                return &binance_processor_;
+            case ExchangeName::BYBIT:
+                return &bybit_processor_;
+            case ExchangeName::DERIBIT:
+                return &deribit_processor_;
+            default:
+                throw std::runtime_error("Invalid exchange type for processor dispatch");
+        }
+    }
 
 
 };
