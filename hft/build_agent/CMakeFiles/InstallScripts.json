@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/build_agent/cmake_install.cmake",
+		"/home/ubuntu/xinyi_workspace/hft/hft_cpp20_system/hft/build_agent/trading/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

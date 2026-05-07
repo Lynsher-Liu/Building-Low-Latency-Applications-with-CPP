@@ -27,6 +27,13 @@ public:
     void process(const PriceLevel& pl) {
         static_cast<Derived*>(this)->handle(pl);
     }
+
+    void processTrade(const Trade& trade) {
+        if constexpr (requires (Derived d, const Trade& t) { d.handleTrade(t); }) {
+            static_cast<Derived*>(this)->handleTrade(trade);
+        }
+    }
+
     // 子类必须提供 interests() 方法返回关注的（交易所，币对）列表
 };
 
@@ -40,6 +47,15 @@ public:
                       << " " << static_cast<int>(sym_) << " price=" << pl.price << std::endl;
         }
     }
+
+    void handleTrade(const Trade& trade) {
+        if (trade.exchange == exch_ && trade.symbol == sym_) {
+            std::cout << "SimpleMM Trade: " << static_cast<int>(exch_)
+                      << " " << static_cast<int>(sym_) << " px=" << trade.price
+                      << " qty=" << trade.quantity << std::endl;
+        }
+    }
+
     std::vector<std::pair<ExchangeName, SymbolName>> interests() const {
         return {{exch_, sym_}};
     }
@@ -60,6 +76,15 @@ public:
                       << " from " << static_cast<int>(pl.exchange) << " price=" << pl.price << std::endl;
         }
     }
+
+    void handleTrade(const Trade& trade) {
+        if (trade.symbol == sym_) {
+            std::cout << "CrossExArb Trade: " << static_cast<int>(sym_)
+                      << " from " << static_cast<int>(trade.exchange)
+                      << " px=" << trade.price << " qty=" << trade.quantity << std::endl;
+        }
+    }
+
     std::vector<std::pair<ExchangeName, SymbolName>> interests() const {
         // 关注所有交易所的该币对
         return {{ExchangeName::BINANCE, sym_}, {ExchangeName::OKX, sym_}, {ExchangeName::BYBIT, sym_}};
@@ -96,10 +121,10 @@ private:
         std::visit([this](const auto& e) 
         {
             using T = std::decay_t<decltype(e)>;
-            if constexpr (std::is_same_v<T, PriceLevel>) {
-                onPriceLevel(e);
-            } else if constexpr (std::is_same_v<T, Trade>) {
-                //onTrade(e);
+            if constexpr (std::is_same_v<T, std::shared_ptr<const PriceLevel>>) {
+                onPriceLevel(*e);
+            } else if constexpr (std::is_same_v<T, std::shared_ptr<const Trade>>) {
+                onTrade(*e);
             }
         }, event);
     }
@@ -122,6 +147,25 @@ private:
                     // 每个任务拷贝事件，独立处理
                     thread_pool_->commit([this, idx, pl]() {
                         callStrategy(idx, pl);
+                    });
+                }
+            }
+        }
+    }
+
+    void onTrade(const Trade& trade)
+    {
+        auto it = dispatch_table_.find(trade.exchange);
+        if (it != dispatch_table_.end())
+        {
+            auto it2 = it->second.find(trade.symbol);
+            if (it2 != it->second.end())
+            {
+                const auto& indices = it2->second;
+                for (size_t idx : indices)
+                {
+                    thread_pool_->commit([this, idx, trade]() {
+                        callTradeStrategy(idx, trade);
                     });
                 }
             }
@@ -167,6 +211,10 @@ private:
         callStrategyImpl(idx, pl, std::index_sequence_for<Strategies...>{}); // 再次生成整数序列 0...N-1
     }
 
+    void callTradeStrategy(size_t idx, const Trade& trade) {
+        callTradeStrategyImpl(idx, trade, std::index_sequence_for<Strategies...>{});
+    }
+
     template<size_t... I>
     void callStrategyImpl(size_t idx, const PriceLevel& pl, std::index_sequence<I...>) {
         /**
@@ -175,6 +223,11 @@ private:
          * 如果不相等，直接返回 void() 
          *  */
         ((idx == I ? (std::get<I>(strategies_).process(pl), void()) : void()), ...);
+    }
+
+    template<size_t... I>
+    void callTradeStrategyImpl(size_t idx, const Trade& trade, std::index_sequence<I...>) {
+        ((idx == I ? (std::get<I>(strategies_).processTrade(trade), void()) : void()), ...);
     }
 };
 }

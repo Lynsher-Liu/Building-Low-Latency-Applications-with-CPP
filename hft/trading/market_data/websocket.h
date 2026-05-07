@@ -442,70 +442,111 @@ private:
                 //auto clock = timer ::TradingClock::getInstance();
                 auto curTime = timer::getCurMicroTime();
                 auto exchange = ExchangeName::OKX; // TODO: obtain exchange name from msg
-                Side side;
 
                 try
                 {
+                    const auto& arg = content["arg"];
+                    const auto channel = arg.value("channel", std::string{});
+                    const auto inst_id = arg.value("instId", std::string{});
+
                     SymbolName symbol = SymbolName::BTC_USDT;
-                    if (content["arg"]["instId"] == "BTC-USDT")
+                    if (inst_id == "BTC-USDT")
                     {
                         symbol = SymbolName::BTC_USDT;
                     }
-                    if (content["arg"]["instId"] == "BTC_USDT_SWAP")
+                    else if (inst_id == "BTC-USDT-SWAP")
                     {
                         symbol = SymbolName::BTC_USDT_SWAP;
-                    }   
+                    }
+                    else
+                    {
+                        ASN_ERROR(loggerWebsocketH, "Unsupported instId in market data frame: " << inst_id);
+                        do_read();
+                        return;
+                    }
+
+                    const auto& data_arr = content["data"];
+                    if (!data_arr.is_array())
+                    {
+                        ASN_ERROR(loggerWebsocketH, "Invalid market data frame. data is not an array: " << content.dump());
+                        do_read();
+                        return;
+                    }
                                             
-                    if (content["arg"]["channel"] == "bbo-tbt" || content["arg"]["channel"] == "books5")
-                    {             
-                        json& bids = content["arg"]["data"]["bids"];  
-                        side = Side::BUY;     
-                        for (unsigned int i = 0; i < bids.size(); ++i)
+                    if (channel == "bbo-tbt" || channel == "books5")
+                    {
+                        for (const auto& level_frame : data_arr)
                         {
-                            double price = bids[i][0];
-                            double quantity = bids[i][1];
-                            uint32_t order_count = bids[i][3];                        
-                            uint32_t level = i;
+                            if (!level_frame.contains("bids") || !level_frame.contains("asks"))
+                            {
+                                continue;
+                            }
 
-                            std::visit([&](auto* proc) {
-                                proc->writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
-                            }, getProcessor(exchange));
+                            const auto& bids = level_frame["bids"];
+                            const auto& asks = level_frame["asks"];
 
-                            //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                            for (size_t i = 0; i < bids.size(); ++i)
+                            {
+                                if (!bids[i].is_array() || bids[i].size() < 4)
+                                {
+                                    continue;
+                                }
+
+                                const double price = std::stod(bids[i][0].get<std::string>());
+                                const double quantity = std::stod(bids[i][1].get<std::string>());
+                                const uint32_t order_count = static_cast<uint32_t>(std::stoul(bids[i][3].get<std::string>()));
+                                const uint32_t level = static_cast<uint32_t>(i);
+
+                                std::visit([&](auto* proc) {
+                                    proc->writePriceLevelMsg2Queue(exchange, symbol, Side::BUY, price, quantity, order_count, curTime, level);
+                                }, getProcessor(exchange));
+                            }
+
+                            for (size_t i = 0; i < asks.size(); ++i)
+                            {
+                                if (!asks[i].is_array() || asks[i].size() < 4)
+                                {
+                                    continue;
+                                }
+
+                                const double price = std::stod(asks[i][0].get<std::string>());
+                                const double quantity = std::stod(asks[i][1].get<std::string>());
+                                const uint32_t order_count = static_cast<uint32_t>(std::stoul(asks[i][3].get<std::string>()));
+                                const uint32_t level = static_cast<uint32_t>(i);
+
+                                std::visit([&](auto* proc) {
+                                    proc->writePriceLevelMsg2Queue(exchange, symbol, Side::SELL, price, quantity, order_count, curTime, level);
+                                }, getProcessor(exchange));
+                            }
                         }
 
-                        json& asks = content["arg"]["data"]["asks"];   
-                        side = Side::SELL;    
-                        for (unsigned int i = 0; i < asks.size(); ++i)
+                        //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                    }
+                    else if (channel == "trades")
+                    {
+                        for (const auto& trade_msg : data_arr)
                         {
-                            double price = asks[i][0];
-                            double quantity = asks[i][1];
-                            uint32_t order_count = asks[i][3];                        
-                            uint32_t level = i;
+                            if (!trade_msg.is_object())
+                            {
+                                continue;
+                            }
+
+                            const Side trade_side = trade_msg.value("side", std::string{}) == "buy" ? Side::BUY : Side::SELL;
+                            const double price = std::stod(trade_msg.value("px", std::string{"0"}));
+                            const double quantity = std::stod(trade_msg.value("sz", std::string{"0"}));
+                            const uint32_t count = static_cast<uint32_t>(std::stoul(trade_msg.value("count", std::string{"1"})));
+                            const uint64_t seq_id = trade_msg["seqId"].is_number_unsigned() ?
+                                trade_msg["seqId"].get<uint64_t>() :
+                                std::stoull(trade_msg["seqId"].get<std::string>());
+                            const int source = std::stoi(trade_msg.value("source", std::string{"0"}));
+                            const auto trade_id = trade_msg.value("tradeId", std::string{});
+                            const timer::TimeStamp timestamp = static_cast<timer::TimeStamp>(
+                                std::stoull(trade_msg.value("ts", std::string{"0"})));
 
                             std::visit([&](auto* proc) {
-                                proc->writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
+                                proc->writeTradeMsg2Queue(exchange, symbol, count, trade_side, price, quantity, seq_id, source, trade_id.c_str(), timestamp);
                             }, getProcessor(exchange));
-
-                            //getProcessor(exchange).writePriceLevelMsg2Queue(exchange, symbol, side, price, quantity, order_count, curTime, level);
-                        }                   
-                    }
-                    else if (content["arg"]["channel"] == "trades")
-                    {
-                        json& data = content["arg"]["data"];
-                        Side side = data["side"] == "buy" ? Side::BUY : Side::SELL;                        
-                        double price = std::stod(data["px"].get<std::string>());
-                        double quantity = std::stod(data["sz"].get<std::string>());
-                        uint32_t count = std::stoi(data["count"].get<std::string>());
-                        uint64_t seqId = data["seqId"].get<uint64_t>();
-                        int source = std::stoi(data["source"].get<std::string>());          
-                        
-                        const char* trade_id = data["trade_id"].get<std::string>().c_str();	
-                        timer::TimeStamp timestamp = data["timestamp"].get<timer::TimeStamp>();
-
-                        std::visit([&](auto* proc) {
-                            proc->writeTradeMsg2Queue(exchange, symbol, count, side, price, quantity, seqId, source, trade_id, timestamp);
-                        }, getProcessor(exchange));                    
+                        }
                     }
                 }
                 catch(const std::exception& e)

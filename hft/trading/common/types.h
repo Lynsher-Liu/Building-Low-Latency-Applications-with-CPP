@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <limits>
 #include <sstream>
 #include <array>
@@ -102,23 +103,6 @@ inline std::string symbolToString(SymbolName symbol)
         case SymbolName::BTC_USDT_SWAP:
             return "BTC_USDT_SWAP";
     }
-    return "UNKNOWN";
-}
-
-inline std::string exchangeToString(ExchangeName exchange) 
-{
-    switch (exchange) 
-    {
-        case ExchangeName::OKX:
-            return "OKX";
-        case ExchangeName::BINANCE:
-            return "BINANCE";
-        case ExchangeName::BYBIT:
-            return "BYBIT";
-        case ExchangeName::DERIBIT:
-            return "DERIBIT";
-    }
-
     return "UNKNOWN";
 }
 
@@ -364,7 +348,10 @@ struct Trade
 		source(src), 
 		timestamp(ts)
 		{
-			strncpy(trade_id, tid, MAX_TRADE_ID_LEN);
+			if (tid) {
+				std::memset(trade_id, 0, MAX_TRADE_ID_LEN);
+				std::strncpy(trade_id, tid, MAX_TRADE_ID_LEN - 1);
+			}
 			id++;
 		}
 

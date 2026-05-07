@@ -105,19 +105,21 @@ protected:
 	{
         std::visit([this](const auto& e) {
             using T = std::decay_t<decltype(e)>;
-            if constexpr (std::is_same_v<T, PriceLevel>) {
-                // 简单风控检查（例如价格涨跌幅）
-                // if (e.best_bid > 100000) { // 假设阈值
-                //     std::cout << "[Risk] Price too high! Bid=" << e.best_bid << std::endl;
-                // }
-            } else if constexpr (std::is_same_v<T, Trade>) {
-                // 检查大额交易
-                // if (e.quantity > 100) {
-                //     std::cout << "[Risk] Large trade: " << e.quantity << " @ " << e.price << std::endl;
-                // }
+      if constexpr (std::is_same_v<T, std::shared_ptr<const PriceLevel>>) {
+        onPriceLevel(*e);
+      } else if constexpr (std::is_same_v<T, std::shared_ptr<const Trade>>) {
+        onTrade(*e);
             }
         }, event);
     }
+
+  void onPriceLevel(const PriceLevel& /*price_level*/) const noexcept {
+    // TODO: add per-symbol price movement checks if needed.
+  }
+
+  void onTrade(const Trade& /*trade*/) const noexcept {
+    // TODO: add large-trade or toxic-flow checks if needed.
+  }
 
   private:
     std::string time_str_;

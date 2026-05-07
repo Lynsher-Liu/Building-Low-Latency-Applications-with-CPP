@@ -144,7 +144,7 @@ public:
                         book.onPricelevelUpdate(pl);
                     }, it->second);
                 } else {
-                    std::cerr << "Unknown symbol for exchange " << static_cast<int>(E) << std::endl;
+                    ASN_ERROR(loggerH, "Unknown symbol for exchange " << static_cast<int>(E));
                 }
 
                 bus_.publish(Event(pl)); // publish to event bus
@@ -155,6 +155,15 @@ public:
             while (tradeQueue.try_dequeue(trade)) {
                 // 处理交易更新逻辑，例如记录成交信息等
                 ASN_INFO(loggerH, "Processing Trade: " + trade->toString());
+
+                auto it = orderbooks_.find(trade->symbol);
+                if (it != orderbooks_.end()) {
+                    std::visit([&](auto& book) {
+                        book.onMarketUpdate(trade);
+                    }, it->second);
+                } else {
+                    ASN_ERROR(loggerH, "Unknown symbol for exchange " << static_cast<int>(E));
+                }
 
                 bus_.publish(Event(trade)); // publish to event bus
             }
