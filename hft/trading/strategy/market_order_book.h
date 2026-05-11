@@ -26,21 +26,7 @@ struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
 	static constexpr double tick_size = 0.01;
 	static constexpr const char* name = "OKX BTCUSDT";
 };
-// OKX BTCUSDT 特性
-template<>
-struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT> {
-	static constexpr size_t depth = 5;
-	static constexpr double tick_size = 0.01;
-	static constexpr const char* name = "OKX BTCUSDT";
-};
 
-// OKX BTCUSDT_SWAP 特性
-template<>
-struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
-	static constexpr size_t depth = 5;
-	static constexpr double tick_size = 0.01;
-	static constexpr const char* name = "OKX BTC_USDT_SWAP";
-};
 // OKX BTCUSDT_SWAP 特性
 template<>
 struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
@@ -78,7 +64,7 @@ class OrderBook {
 		if (UNLIKELY(Traits::tick_size <= 0.0)) {
 			return static_cast<Price>(std::llround(px));
 		}
-		return static_cast<Price>(std::llround(px / Traits::tick_size));
+		return static_cast<Price>(std::llround(px / Traits::tick_size)*Traits::tick_size); // round to nearest tick
 	}
 
 	static auto toBookQty(double qty) noexcept -> Qty {
