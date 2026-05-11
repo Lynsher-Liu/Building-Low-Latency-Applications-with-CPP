@@ -127,13 +127,13 @@ public:
 		}
 
 		auto& levels = (pl->side == Side::BUY) ? bids_ : asks_;
-		levels[pl->level] = *pl;
+		levels[pl->level] = pl.get();
 
 		updateBBO();
 	}
 
-void onMarketUpdate(std::shared_ptr<const Common::Trade> market_update) 
-{
+	void onMarketUpdate(std::shared_ptr<const Common::Trade> market_update) 
+	{
 		if (!market_update) {
 			return;
 		}
@@ -173,7 +173,7 @@ void onMarketUpdate(std::shared_ptr<const Common::Trade> market_update)
 		}
 
 		updateBBO();
-}
+	}
 
 	auto updateBBO() noexcept -> void {
 		if (!bids_.empty() && bids_[0].quantity > 0.0 && bids_[0].price > 0.0) {

@@ -70,7 +70,7 @@ public:
     {
         id_counter++;
         bus_.subscribe(this);
-        start();
+        //start();
     }
 
     virtual ~EventSubscriber() 

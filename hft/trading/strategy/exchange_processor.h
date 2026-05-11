@@ -39,9 +39,6 @@ template<ExchangeName E>
 class ExchangeProcessor
 {
 private:
-    /// Hash map container from TickerId -> MarketOrderBook.
-    //MarketOrderBookHashMap ticker_order_book_;
-
     // 使用 variant 存储不同币对的订单簿（因为每个 OrderBook 类型不同）
     using OrderBookVariant = std::variant<
         OrderBook<E, SymbolName::BTC_USDT>,
@@ -61,17 +58,13 @@ private:
     moodycamel::ConcurrentQueue<shared_ptr<const PriceLevel>> priceLevelQueue; // 线程安全的队列，用于存储待处理的PriceLevel对象
     moodycamel::ConcurrentQueue<shared_ptr<const Trade>> tradeQueue; // 线程安全的队列，用于存储待处理的Trade对象
 
-    static constexpr size_t DEPTH = (E == ExchangeName::OKX) ? 5 : 50;
-    static constexpr double TICK_SIZE = (E == ExchangeName::OKX) ? 0.01 : 0.1;
+    //static constexpr size_t DEPTH = (E == ExchangeName::OKX) ? 5 : 50;
+    //static constexpr double TICK_SIZE = (E == ExchangeName::OKX) ? 0.01 : 0.1;
 
 public:
     ExchangeProcessor(EventBus& bus, const int& numaNode) : bus_(bus), bindToNumaNode(numaNode), numa_allocator(numaNode)
     {
-        // 初始化ticker_order_book_，为每个symbol创建一个MarketOrderBook实例
-        // for (size_t i = 0; i < ME_MAX_TICKERS; ++i) {
-        //     ticker_order_book_[i] = new MarketOrderBook();
-        // }
-
+        // 初始化orderbooks_，为每个symbol创建一个MarketOrderBook实例
         orderbooks_ = {
             {SymbolName::BTC_USDT, OrderBook<E, SymbolName::BTC_USDT>{}},
             {SymbolName::BTC_USDT_SWAP, OrderBook<E, SymbolName::BTC_USDT_SWAP>{}}
@@ -103,15 +96,14 @@ public:
         if (it != orderbooks_.end()) {
             std::visit([](auto& book) {
                 // 这里可以调用订单簿的接口，例如获取BBO等
-                double best_bid = book.bestBid();
-                double best_ask = book.bestAsk();
+                Price best_bid = book.getBBO()->bid_price_;
+                Price best_ask = book.getBBO()->ask_price_;
                 ASN_INFO(loggerH, "Best Bid: " + std::to_string(best_bid) + ", Best Ask: " + std::to_string(best_ask));
             }, it->second);
         } else {
             ASN_ERROR(loggerH, "Unknown symbol: " + Common::symbolToString(symbol));
         }
     }
-
 
     auto start() -> void
     {
@@ -141,15 +133,7 @@ public:
             while (priceLevelQueue.try_dequeue(pl)) {
                 // 处理价格更新逻辑，例如更新订单簿等
                 //auto buffer = struct_pack::serialize<std::string>(*(pl.get())); TODO: check using it
-                ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString()); //pl->toString()
-
-                if constexpr (E == ExchangeName::OKX) {
-                    //parseBinanceMessage(raw_msg);
-                    
-                } else if constexpr (E == ExchangeName::BINANCE) {
-                    //parseOKXMessage(raw_msg);
-                    
-                }
+                ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString()); 
 
                 auto it = orderbooks_.find(pl->symbol);
                 if (it != orderbooks_.end()) {
@@ -183,7 +167,7 @@ public:
             }
 
             // 可以添加适当的睡眠以避免忙等待，或者使用条件变量来优化等待机制
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
