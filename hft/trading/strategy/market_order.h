@@ -66,6 +66,15 @@ namespace Trading {
   typedef std::array<MarketOrdersAtPrice *, ME_MAX_PRICE_LEVELS> OrdersAtPriceHashMap;
 
   /// Represents a Best Bid Offer (BBO) abstraction for components which only need a small summary of top of book price and liquidity instead of the full order book.
+
+  struct BBOSnapshot {
+    Price bid_price = Price_INVALID;
+    Qty bid_qty = Qty_INVALID;
+    Price ask_price = Price_INVALID;
+    Qty ask_qty = Qty_INVALID;
+    timer::TimeStamp ts = 0;
+  };
+  
   struct BBO {
     Price bid_price_ = Price_INVALID, ask_price_ = Price_INVALID;
     Qty bid_qty_ = Qty_INVALID, ask_qty_ = Qty_INVALID;
@@ -80,5 +89,16 @@ namespace Trading {
 
       return ss.str();
     };
+
+    inline BBOSnapshot makeBBOSnapshot(const BBO& bbo, timer::TimeStamp ts) noexcept {
+      return {
+        .bid_price = bbo.bid_price_,
+        .bid_qty = bbo.bid_qty_,
+        .ask_price = bbo.ask_price_,
+        .ask_qty = bbo.ask_qty_,
+        .ts = ts
+      };
+    }
   };
+
 }

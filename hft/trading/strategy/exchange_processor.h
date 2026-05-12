@@ -145,6 +145,9 @@ public:
                     ASN_ERROR(loggerH, "Unknown symbol for exchange " << static_cast<int>(E));
                 }
 
+                BBO snapshot = book.getBBOSnapshot();
+                position_keeper.updatePnlByBBO(symbol);
+
                 bus_.publish(Event(pl)); // publish to event bus
             }
 
@@ -162,6 +165,18 @@ public:
                 } else {
                     ASN_ERROR(loggerH, "Unknown symbol for exchange " << static_cast<int>(E));
                 }
+
+                BBO snapshot = book.getBBOSnapshot();
+                position_keeper.updatePnlByBBO(symbol);
+
+                /**
+                 * Core hot path:
+                    OrderBook -> PositionKeeper -> FeatureEngine -> primary Strategy -> OrderManager/Risk
+                    same thread, copied BBO value
+
+                    Async side path:
+                    EventBus -> logs / metrics / diagnostics / slow observers / secondary strategies
+                 */
 
                 bus_.publish(Event(trade)); // publish to event bus
             }

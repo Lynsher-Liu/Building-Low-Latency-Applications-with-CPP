@@ -17,7 +17,7 @@ namespace Trading
 		int32_t position_ = 0;
 		double real_pnl_ = 0, unreal_pnl_ = 0, total_pnl_ = 0;
 		std::array<double, sideToIndex(Side::MAX) + 1> open_vwap_;
-		std::array<double, sideToIndex(Side::MAX) + 1> vwap_;
+		//std::array<double, sideToIndex(Side::MAX) + 1> vwap_;
 		Qty volume_ = 0; //the total quantity that has been executed
 		const BBO *bbo_ = nullptr;
 
@@ -96,8 +96,11 @@ namespace Trading
 			total_pnl_ = unreal_pnl_ + real_pnl_;
 		}
 
+
+		
+
 		/**
-		 *  Process a change from top-of-book prices (BBO)
+		 *  Process a change from BBO
 		 *  calculate mid_price and unrealized pnl
 		 * */ 
 		auto updatePnlByBBO(const BBO *bbo) noexcept 
@@ -128,6 +131,58 @@ namespace Trading
 		}
 	};
 
+	struct PositionSnapshot {
+		ExchangeName exchange;
+		SymbolName symbol;
+		BBOSnapshot bbo;
+		int32_t position = 0;
+		double realized_pnl = 0.0;
+		double unrealized_pnl = 0.0;
+		double total_pnl = 0.0;
+	};
+//TODO: or use atomic values inside PublishedPosition
+/**
+ * std::atomic<Price> bid_price{Price_INVALID};
+  std::atomic<Qty> bid_qty{Qty_INVALID};
+  std::atomic<Price> ask_price{Price_INVALID};
+  std::atomic<Qty> ask_qty{Qty_INVALID};
+ */
+
+/**
+ * Use a seqlock-style published snapshot for readers
+ * this version assumes single writer. That fits the recommended design: the ExchangeProcessor / hot market-data thread updates PositionKeeper, and other threads only read snapshots.
+ */
+class PublishedPosition {
+public:
+  void publish(const PositionSnapshot& s) noexcept {
+    seq_.fetch_add(1, std::memory_order_acq_rel); // odd = writer active
+
+    snapshot_ = s; // only writer thread writes this
+
+    seq_.fetch_add(1, std::memory_order_release); // even = stable
+  }
+
+  PositionSnapshot read() const noexcept {
+    PositionSnapshot out;
+
+    for (;;) {
+      const auto before = seq_.load(std::memory_order_acquire);
+      if (before & 1) continue;
+
+      out = snapshot_;
+
+      const auto after = seq_.load(std::memory_order_acquire);
+      if (before == after && !(after & 1)) {
+        return out;
+      }
+    }
+  }
+
+private:
+  mutable std::atomic<uint64_t> seq_{0};
+  PositionSnapshot snapshot_{};
+};
+
   /// Top level position keeper class to compute position, pnl and volume for all trading instruments.
   class PositionKeeper {
   public:
@@ -157,6 +212,14 @@ namespace Trading
     auto addFill(const Exchange::MEClientResponse *client_response) noexcept {
       ticker_position_.at(client_response->ticker_id_).addFill(client_response); //, logger_
     }
+
+	void updateBBO(SymbolName sym, const BBO& bbo) noexcept 
+	{
+		auto& pos = positions_[sym];
+		pos.bbo_ = bbo;          // copied snapshot
+		pos.updatePnlByBBO(pos);     // mark position using that same snapshot
+		pos.publishSnapshot(pos);    // optional seqlock publication
+	}
 
     auto updatePnlByBBO(TickerId ticker_id, const BBO *bbo) noexcept {
       ticker_position_.at(ticker_id).updatePnlByBBO(bbo); //, logger_
