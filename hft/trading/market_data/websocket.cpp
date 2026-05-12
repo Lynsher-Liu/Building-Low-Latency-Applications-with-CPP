@@ -150,7 +150,8 @@ void AsyncWebsocketClient<Processors...>::handle_bbo_tbt_BTC_USDT(const json& ms
  *          当count > 1时，表示taker订单以相同价格匹配了多个maker订单。
  *              例如，如果tradeId = 123，且count = 3，表示该消息聚合了tradeId = 123, 122, 121的成交。maker侧有多笔价格相同的订单被成交。
  * 
- * seqId: 同时发生的不同交易推送数据的`seqId`可能相同
+ * seqId: 同时发生的不同交易推送数据的`seqId`可能相同,a single push can contain multiple individual trades (fills) that share the same seqId. 
+ * 
  * 
  * {
         "arg": {

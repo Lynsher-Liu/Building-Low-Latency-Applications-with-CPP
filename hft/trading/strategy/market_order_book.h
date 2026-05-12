@@ -1,3 +1,11 @@
+/*
+ * @Author: Lynsher xinyiliu@astri.org
+ * @Date: 2026-05-12 10:27:26
+ * @LastEditors: Lynsher xinyiliu@astri.org
+ * @LastEditTime: 2026-05-12 11:17:31
+ * @FilePath: /my_HFT/hft/trading/strategy/market_order_book.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #pragma once
 
 #include <algorithm>
@@ -46,6 +54,19 @@ class OrderBook {
 
 	BBO bbo_{};
 
+  /**
+   * OKX's WebSocket trade channel sends aggregated trades — 
+   * a single push can contain multiple individual trades (fills) that share the same seqId. 
+   * Within one seqId group, OKX may re-send or partially overlap individual trade_ids. The code handles this OKX-specific behavior
+   * 
+   * 16 is a conservative upper bound — most aggregated trades have 1-3 fills, but burst events can produce more
+   * 
+   * e.g. {seq_id: 123, trade_id: 121}, {seq_id: 123, trade_id: 122}
+   * there maybe 2 trades with same seq_id 123, but they have different trade_id
+   * so we shoule record last_trade_seq_id_=123, and record trade_id 121 and 122 as seen in current seq_id
+   * 
+   * when a new seq_id 124 comes, we should clear seen trade_id record, and update last_trade_seq_id_ to 124
+   */
 	uint64_t last_trade_seq_id_{0};
 	std::array<std::array<char, Common::MAX_TRADE_ID_LEN>, 16> trade_ids_in_seq_{};
 	size_t trade_ids_in_seq_size_{0};
@@ -84,7 +105,7 @@ class OrderBook {
 	}
 
 	auto rememberTradeInCurrentSeq(const char* trade_id) noexcept -> void {
-		if (trade_ids_in_seq_size_ < trade_ids_in_seq_.size()) {
+		if (trade_ids_in_seq_size_ < trade_ids_in_seq_.size()) { // stops at 16, If more than 16 unique trade_ids arrive within the same seqId, the rememberTradeInCurrentSeq guard silently drops them
 			auto& slot = trade_ids_in_seq_[trade_ids_in_seq_size_++];
 			std::memset(slot.data(), 0, slot.size());
 			std::strncpy(slot.data(), trade_id, Common::MAX_TRADE_ID_LEN - 1);
@@ -138,15 +159,30 @@ public:
 			return;
 		}
 
+    /**seqId < last_trade_seq_id   →  stale/reordered → skip entirely */
 		if (market_update->seqId < last_trade_seq_id_) {
 			return;
 		}
 
+    /**
+     * seqId > last_trade_seq_id   →  NEW sequence group
+                              →  reset trade_ids_in_seq_size_ = 0  (clear the seen-list)
+                              →  record this trade_id as the first in the new group
+                              →  process the trade
+
+        trade_ids_in_seq_size_ resets to 0, and subsequent writes start from slot 0 again
+     */
 		if (market_update->seqId > last_trade_seq_id_) {
 			last_trade_seq_id_ = market_update->seqId;
-			trade_ids_in_seq_size_ = 0;
+			trade_ids_in_seq_size_ = 0; 
 		}
 
+    /**
+     * seqId == last_trade_seq_id  →  same sequence group
+                              →  check: have we seen this trade_id already?
+                                  → Yes: skip (duplicate)
+                                  → No:  add trade_id to list, process the trade
+     */
 		if (hasSeenTradeInCurrentSeq(market_update->trade_id)) {
 			return;
 		}
@@ -191,15 +227,12 @@ public:
 			bbo_.ask_price_ = Price_INVALID;
 			bbo_.ask_qty_ = Qty_INVALID;
 		}
-}
+	}
 
     auto getBBO() const noexcept -> const BBO* {
       return &bbo_;
     }
 
-    auto toString(bool detailed, bool validity_check) const -> std::string;
-
-    /// Deleted default, copy & move constructors and assignment-operators.
 	OrderBook(const OrderBook &) = default;
 
 	OrderBook(OrderBook &&) = default;
