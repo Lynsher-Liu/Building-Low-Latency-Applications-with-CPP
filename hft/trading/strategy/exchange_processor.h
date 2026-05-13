@@ -2,20 +2,25 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-05-11 18:11:00
+ * @LastEditTime: 2026-05-13 19:21:41
  * @FilePath: /my_HFT/hft/trading/market_data/market_update_type.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #pragma once
 
+#include <array>
 #include <sstream>
 #include <string>
 #include <memory>
 #include <atomic>
 #include <chrono>
+#include <tuple>
+#include <variant>
+
 #include "concurrentqueue/concurrentqueue.h"
 
 #include "market_order_book.h"
+#include "position_keeper.h"
 #include "../common/types.h"
 #include "../common/event_bus.h"
 #include "../common/mem_pool.h"
@@ -35,18 +40,25 @@ namespace Trading
  * @brief This class maintains message queue/ memory pool/ working thread/ orderbook for one exchange
  * Act as the tradingEngine class in book's original design
  */
-template<ExchangeName E>
+/**
+ * @brief ExchangeProcessor specialized on a compile-time symbol pack.
+ *
+ * - Stores one concrete OrderBook per symbol in a tuple (no unordered_map).
+ * - Routes runtime SymbolName updates via a tiny symbol-pack index lookup.
+ * - Owns one PositionKeeper<E, Symbols...> for all symbols in this exchange.
+ */
+template<ExchangeName E, SymbolName... Symbols>
 class ExchangeProcessor
 {
 private:
-    // 使用 variant 存储不同币对的订单簿（因为每个 OrderBook 类型不同）
-    using OrderBookVariant = std::variant<
-        OrderBook<E, SymbolName::BTC_USDT>,
-        OrderBook<E, SymbolName::BTC_USDT_SWAP>
-    >;
-    
-    // 币对 -> 订单簿 variant 的映射
-    std::unordered_map<SymbolName, OrderBookVariant> orderbooks_;
+    static constexpr size_t kNumSymbols = sizeof...(Symbols);
+    static constexpr std::array<SymbolName, kNumSymbols> kSymbols{Symbols...};
+    static constexpr size_t npos = static_cast<size_t>(-1);
+
+    using OrderBooksTuple = std::tuple<OrderBook<E, Symbols>...>;
+
+    OrderBooksTuple orderbooks_{};
+    PositionKeeper<E, Symbols...> position_keeper_{}; // tracks all symbols for this exchange
 
     const int& bindToNumaNode;
     affinity::PmrMemoryNumaAllocator numa_allocator; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
@@ -62,14 +74,7 @@ private:
     //static constexpr double TICK_SIZE = (E == ExchangeName::OKX) ? 0.01 : 0.1;
 
 public:
-    ExchangeProcessor(EventBus& bus, const int& numaNode) : bus_(bus), bindToNumaNode(numaNode), numa_allocator(numaNode)
-    {
-        // 初始化orderbooks_，为每个symbol创建一个MarketOrderBook实例
-        orderbooks_ = {
-            {SymbolName::BTC_USDT, OrderBook<E, SymbolName::BTC_USDT>{}},
-            {SymbolName::BTC_USDT_SWAP, OrderBook<E, SymbolName::BTC_USDT_SWAP>{}}
-        };
-    }
+    ExchangeProcessor(EventBus& bus, const int& numaNode) : bus_(bus), bindToNumaNode(numaNode), numa_allocator(numaNode) {}
 
     ~ExchangeProcessor()
     {
@@ -90,19 +95,23 @@ public:
         tradeQueue.enqueue(trade);
     }
 
+    static inline auto tryMapTickerIdToSymbol(TickerId ticker_id, SymbolName &out_symbol) noexcept -> bool
+    {
+        if (UNLIKELY(ticker_id >= kNumSymbols)) {
+            return false;
+        }
+        out_symbol = kSymbols[ticker_id];
+        return true;
+    }
+
     void getOrderbook(SymbolName symbol) 
     {
-        auto it = orderbooks_.find(symbol);
-        if (it != orderbooks_.end()) {
-            std::visit([](auto& book) {
-                // 这里可以调用订单簿的接口，例如获取BBO等
-                Price best_bid = book.getBBO()->bid_price_;
-                Price best_ask = book.getBBO()->ask_price_;
-                ASN_INFO(loggerH, "Best Bid: " + std::to_string(best_bid) + ", Best Ask: " + std::to_string(best_ask));
-            }, it->second);
-        } else {
-            ASN_ERROR(loggerH, "Unknown symbol: " + Common::symbolToString(symbol));
-        }
+        withOrderBook(symbol, [&](auto &book) {
+            const auto *bbo = book.getBBO();
+            const auto best_bid = bbo ? bbo->bid_price_ : Price_INVALID;
+            const auto best_ask = bbo ? bbo->ask_price_ : Price_INVALID;
+            ASN_INFO(loggerH, "Best Bid: " + std::to_string(best_bid) + ", Best Ask: " + std::to_string(best_ask));
+        });
     }
 
     auto start() -> void
@@ -118,7 +127,7 @@ public:
 		m_stop.store(true);
 		
 		// 给一点时间让会话优雅关闭（可选）
-        std::this_thread::sleep_for(100ms);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		if (m_worker_thread && m_worker_thread->joinable())
 			m_worker_thread->join();
@@ -135,18 +144,22 @@ public:
                 //auto buffer = struct_pack::serialize<std::string>(*(pl.get())); TODO: check using it
                 ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString()); 
 
-                auto it = orderbooks_.find(pl->symbol);
-                if (it != orderbooks_.end()) {
-                    // 根据币对调用对应的订单簿更新
-                    std::visit([&](auto& book) {
-                        book.onPricelevelUpdate(pl);
-                    }, it->second);
-                } else {
-                    ASN_ERROR(loggerH, "Unknown symbol for exchange " << static_cast<int>(E));
-                }
+                withOrderBook(pl->symbol, [&](auto &book) {
+                    // update orderbook and BBO inside
+                    book.onPricelevelUpdate(pl);
 
-                BBO snapshot = book.getBBOSnapshot();
-                position_keeper.updatePnlByBBO(symbol);
+                    /**
+                     * Core hot path:
+                        OrderBook -> PositionKeeper -> FeatureEngine -> primary Strategy -> OrderManager/Risk
+                        same thread, copied BBO value
+
+                        Async side path:
+                        EventBus -> logs / metrics / diagnostics / slow observers / secondary strategies
+                    */
+
+                    // update pnl using top-of-book snapshot
+                    position_keeper_.updatePnlByBBO(pl->symbol, book.getBBO());
+                });
 
                 bus_.publish(Event(pl)); // publish to event bus
             }
@@ -157,26 +170,12 @@ public:
                 // 处理交易更新逻辑，例如记录成交信息等
                 ASN_INFO(loggerH, "Processing Trade: " + trade->toString());
 
-                auto it = orderbooks_.find(trade->symbol);
-                if (it != orderbooks_.end()) {
-                    std::visit([&](auto& book) {
-                        book.onMarketUpdate(trade);
-                    }, it->second);
-                } else {
-                    ASN_ERROR(loggerH, "Unknown symbol for exchange " << static_cast<int>(E));
-                }
+                withOrderBook(trade->symbol, [&](auto &book) {
+                    book.onMarketUpdate(trade);
+                    position_keeper_.updatePnlByBBO(trade->symbol, book.getBBO());
+                });
 
-                BBO snapshot = book.getBBOSnapshot();
-                position_keeper.updatePnlByBBO(symbol);
-
-                /**
-                 * Core hot path:
-                    OrderBook -> PositionKeeper -> FeatureEngine -> primary Strategy -> OrderManager/Risk
-                    same thread, copied BBO value
-
-                    Async side path:
-                    EventBus -> logs / metrics / diagnostics / slow observers / secondary strategies
-                 */
+                
 
                 bus_.publish(Event(trade)); // publish to event bus
             }
@@ -189,25 +188,71 @@ public:
 
 
 private:
-    
+    static inline auto symbolIndex(SymbolName symbol) noexcept -> size_t
+    {
+        for (size_t i = 0; i < kSymbols.size(); ++i) {
+            if (kSymbols[i] == symbol) {
+                return i;
+            }
+        }
+        return npos;
+    }
+
+    static inline auto tryGetSymbolIndex(SymbolName symbol, size_t &out_idx) noexcept -> bool
+    {
+        const auto idx = symbolIndex(symbol);
+        if (UNLIKELY(idx == npos)) {
+            return false;
+        }
+        out_idx = idx;
+        return true;
+    }
+
+    template<typename Tuple, typename Fn, size_t I = 0>
+    static inline auto tupleVisitByIndex(Tuple &tuple, size_t idx, Fn &&fn) -> void
+    {
+        if constexpr (I < std::tuple_size_v<Tuple>) {
+            if (idx == I) {
+                fn(std::get<I>(tuple));
+                return;
+            }
+            tupleVisitByIndex<Tuple, Fn, I + 1>(tuple, idx, std::forward<Fn>(fn));
+        }
+    }
+
+    template<typename Fn>
+    inline auto withOrderBook(SymbolName symbol, Fn &&fn) -> void
+    {
+        size_t idx = 0;
+        if (UNLIKELY(!tryGetSymbolIndex(symbol, idx))) {
+            ASN_ERROR(loggerH, "Unknown symbol: " + Common::symbolToString(symbol) + " for exchange: " + Common::exchangeToString(E));
+            return;
+        }
+        tupleVisitByIndex(orderbooks_, idx, std::forward<Fn>(fn));
+    }
 };
 
 
-//template <typename... Processors>
-class ExchangeManager
+// ExchangeManager with a shared symbol-pack across all exchanges.
+template<SymbolName... Symbols>
+class ExchangeManagerT
 {
 private:
-    //std::tuple<Processors...> processors_;
-    Trading::ExchangeProcessor<ExchangeName::OKX>& okx_processor_;
-    Trading::ExchangeProcessor<ExchangeName::BINANCE>& binance_processor_;
-    Trading::ExchangeProcessor<ExchangeName::BYBIT>& bybit_processor_;
-    Trading::ExchangeProcessor<ExchangeName::DERIBIT>& deribit_processor_;
+    using OKXProc = Trading::ExchangeProcessor<ExchangeName::OKX, Symbols...>;
+    using BinanceProc = Trading::ExchangeProcessor<ExchangeName::BINANCE, Symbols...>;
+    using BybitProc = Trading::ExchangeProcessor<ExchangeName::BYBIT, Symbols...>;
+    using DeribitProc = Trading::ExchangeProcessor<ExchangeName::DERIBIT, Symbols...>;
+
+    OKXProc& okx_processor_;
+    BinanceProc& binance_processor_;
+    BybitProc& bybit_processor_;
+    DeribitProc& deribit_processor_;
 
 public:
-    ExchangeManager(Trading::ExchangeProcessor<ExchangeName::OKX>& okx_processor,
-                    Trading::ExchangeProcessor<ExchangeName::BINANCE>& binance_processor,
-                    Trading::ExchangeProcessor<ExchangeName::BYBIT>& bybit_processor,
-                    Trading::ExchangeProcessor<ExchangeName::DERIBIT>& deribit_processor) : 
+    ExchangeManagerT(OKXProc& okx_processor,
+                    BinanceProc& binance_processor,
+                    BybitProc& bybit_processor,
+                    DeribitProc& deribit_processor) : 
         okx_processor_(okx_processor),
         binance_processor_(binance_processor),
         bybit_processor_(bybit_processor),
@@ -218,10 +263,7 @@ public:
         // binance_processor_ = std::make_unique<ExchangeProcessor<ExchangeName::BINANCE>>(bus_, numaNode_);
     }
 
-    using ProcessorVariant = std::variant<Trading::ExchangeProcessor<ExchangeName::OKX>*,
-                                      Trading::ExchangeProcessor<ExchangeName::BINANCE>*,
-                                      Trading::ExchangeProcessor<ExchangeName::BYBIT>*,
-                                      Trading::ExchangeProcessor<ExchangeName::DERIBIT>*>;
+    using ProcessorVariant = std::variant<OKXProc*, BinanceProc*, BybitProc*, DeribitProc*>;
 
     // Runtime dispatch based on ExchangeName (cannot use if constexpr with runtime value)
     // Returns variant holding pointer to appropriate processor type
@@ -242,5 +284,7 @@ public:
 
 
 };
+
+using ExchangeManager = ExchangeManagerT<SymbolName::BTC_USDT, SymbolName::BTC_USDT_SWAP>;
 
 }

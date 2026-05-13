@@ -126,7 +126,7 @@ namespace Trading {
     FeatureEngine feature_engine_;
 
     /// Position keeper to track position, pnl and volume.
-    PositionKeeper position_keeper_;
+    PositionKeeperTickerId position_keeper_;
 
     /// Order manager to simplify the task of managing orders for the trading algorithms.
     OrderManager order_manager_;

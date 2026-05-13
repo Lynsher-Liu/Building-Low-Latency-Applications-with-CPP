@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2026-05-12 10:27:26
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-05-12 11:17:31
+ * @LastEditTime: 2026-05-13 18:12:45
  * @FilePath: /my_HFT/hft/trading/strategy/market_order_book.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -159,30 +159,30 @@ public:
 			return;
 		}
 
-    /**seqId < last_trade_seq_id   →  stale/reordered → skip entirely */
+    	/**seqId < last_trade_seq_id   →  stale/reordered → skip entirely */
 		if (market_update->seqId < last_trade_seq_id_) {
 			return;
 		}
 
-    /**
-     * seqId > last_trade_seq_id   →  NEW sequence group
-                              →  reset trade_ids_in_seq_size_ = 0  (clear the seen-list)
-                              →  record this trade_id as the first in the new group
-                              →  process the trade
+		/**
+		 * seqId > last_trade_seq_id   →  NEW sequence group
+								 →  reset trade_ids_in_seq_size_ = 0  (clear the seen-list)
+								→  record this trade_id as the first in the new group
+								→  process the trade
 
-        trade_ids_in_seq_size_ resets to 0, and subsequent writes start from slot 0 again
-     */
+			trade_ids_in_seq_size_ resets to 0, and subsequent writes start from slot 0 again
+		*/
 		if (market_update->seqId > last_trade_seq_id_) {
 			last_trade_seq_id_ = market_update->seqId;
 			trade_ids_in_seq_size_ = 0; 
 		}
 
-    /**
-     * seqId == last_trade_seq_id  →  same sequence group
-                              →  check: have we seen this trade_id already?
-                                  → Yes: skip (duplicate)
-                                  → No:  add trade_id to list, process the trade
-     */
+		/**
+		 * seqId == last_trade_seq_id  →  same sequence group
+								 →  check: have we seen this trade_id already?
+									→ Yes: skip (duplicate)
+									→ No:  add trade_id to list, process the trade
+		*/
 		if (hasSeenTradeInCurrentSeq(market_update->trade_id)) {
 			return;
 		}
@@ -211,7 +211,8 @@ public:
 		updateBBO();
 	}
 
-	auto updateBBO() noexcept -> void {
+	auto updateBBO() noexcept -> void 
+	{
 		if (!bids_.empty() && bids_[0].quantity > 0.0 && bids_[0].price > 0.0) {
 			bbo_.bid_price_ = toBookPrice(bids_[0].price);
 			bbo_.bid_qty_ = toBookQty(bids_[0].quantity);

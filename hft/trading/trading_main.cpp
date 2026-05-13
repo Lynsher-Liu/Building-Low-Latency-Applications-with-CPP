@@ -32,10 +32,10 @@ int main(int argc, char **argv)
 	const int bindToNumaNode = affinity::get_least_loaded_numa_node();
 
 	// 2. Create ExchangeProcessors for each exchange and put them into the exchangeManager
-	Trading::ExchangeProcessor<ExchangeName::OKX> okx_processor(bus, bindToNumaNode);
-	Trading::ExchangeProcessor<ExchangeName::BINANCE> binance_processor(bus, bindToNumaNode);
-	Trading::ExchangeProcessor<ExchangeName::BYBIT> bybit_processor(bus, bindToNumaNode);
-	Trading::ExchangeProcessor<ExchangeName::DERIBIT> deribit_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::OKX, SymbolName::BTC_USDT, SymbolName::BTC_USDT_SWAP> okx_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::BINANCE, SymbolName::BTC_USDT, SymbolName::BTC_USDT_SWAP> binance_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::BYBIT, SymbolName::BTC_USDT, SymbolName::BTC_USDT_SWAP> bybit_processor(bus, bindToNumaNode);
+	Trading::ExchangeProcessor<ExchangeName::DERIBIT, SymbolName::BTC_USDT, SymbolName::BTC_USDT_SWAP> deribit_processor(bus, bindToNumaNode);
 
 	Trading::ExchangeManager exchangeManager = Trading::ExchangeManager(okx_processor, binance_processor, bybit_processor, deribit_processor);
 
