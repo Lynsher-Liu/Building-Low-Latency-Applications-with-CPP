@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# TODO - point these to the correct binary locations on your system.
-CMAKE=$(which cmake)
-NINJA=$(which ninja)
+# Allow overriding these from the environment.
+CMAKE=${CMAKE:-$(command -v cmake)}
+NINJA=${NINJA:-$(command -v ninja)}
 
 # Useful constants
 COLOR_RED="\033[0;31m"
@@ -97,7 +97,7 @@ function setup_fmt() {
   mkdir -p "$FMT_BUILD_DIR"
   cd "$FMT_BUILD_DIR" || exit
 
-  cmake                                           \
+  $CMAKE                                          \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"               \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"              \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE"              \
@@ -127,7 +127,7 @@ function setup_googletest() {
   mkdir -p "$GTEST_BUILD_DIR"
   cd "$GTEST_BUILD_DIR" || exit
 
-  cmake                                           \
+  $CMAKE                                          \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"               \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"              \
     "$MAYBE_OVERRIDE_CXX_FLAGS"                   \
@@ -154,7 +154,7 @@ function setup_zstd() {
   mkdir -p "$ZSTD_BUILD_DIR"
   cd "$ZSTD_BUILD_DIR" || exit
 
-  cmake                                           \
+  $CMAKE                                          \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"               \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"              \
     "$MAYBE_OVERRIDE_CXX_FLAGS"                   \
@@ -205,7 +205,7 @@ function setup_folly() {
     MAYBE_BUILD_SHARED_LIBS="-DBUILD_SHARED_LIBS=OFF"
   fi
 
-  cmake                                           \
+  $CMAKE                                          \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"               \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"              \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE"              \
@@ -278,7 +278,7 @@ function setup_log4cplus() {
   mkdir -p "$LOG4CPLUS_BUILD_DIR"
   cd "$LOG4CPLUS_BUILD_DIR" || exit
 
-  cmake                                     \
+  $CMAKE                                    \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"         \
     "$MAYBE_OVERRIDE_CXX_FLAGS"             \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"        \
@@ -324,7 +324,7 @@ function setup_pahomqttc() {
   mkdir -p "$PAHOMQTTC_BUILD_DIR"
   cd "$PAHOMQTTC_BUILD_DIR" || exit
 
-  cmake                                           \
+  $CMAKE                                          \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"               \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"              \
     "$MAYBE_OVERRIDE_CXX_FLAGS"                   \
@@ -352,7 +352,7 @@ function setup_pahomqttcpp() {
   mkdir -p "$PAHOMQTTCPP_BUILD_DIR"
   cd "$PAHOMQTTCPP_BUILD_DIR" || exit
 
-  cmake                                           \
+  $CMAKE                                          \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"               \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"              \
     "$MAYBE_OVERRIDE_CXX_FLAGS"                   \
@@ -388,7 +388,7 @@ function setup_mapf() {
     BUILD_MODULES="all"
   fi 
   
-  cmake                                     \
+  $CMAKE                                    \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE"        \
     -DCMAKE_PREFIX_PATH="$DEPS_DIR"         \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"        \
@@ -420,7 +420,6 @@ function setup_trading() {
   echo -e "${COLOR_GREEN}Building TRADING ${COLOR_OFF}"  
 
   mkdir -p "$TRADING_BUILD_DIR"
-  cd "$TRADING_BUILD_DIR" || exit
   
   MAYBE_BUILD_TESTS="-DBUILD_TESTS=ON"
   if [ "$NO_BUILD_TESTS" == true ] ; then
@@ -434,9 +433,13 @@ function setup_trading() {
     BUILD_MODULES="all"
   fi 
   
-  cmake                                     \
+  $CMAKE                                    \
+    -G Ninja                                \
+    -DCMAKE_MAKE_PROGRAM="$NINJA"           \
+    -S "$TRADING_DIR"                       \
+    -B "$TRADING_BUILD_DIR"                 \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE"        \
-    -DCMAKE_PREFIX_PATH="$PREFIXs"         \
+    -DCMAKE_PREFIX_PATH="$PREFIX"          \
     -DCMAKE_INSTALL_PREFIX="$PREFIX"        \
     -DCMAKE_MODULE="$BUILD_MODULES"         \
     "$MAYBE_BUILD_QUIC"                     \
@@ -445,12 +448,9 @@ function setup_trading() {
     "$MAYBE_BUILD_SHARED_LIBS"              \
     "$MAYBE_OVERRIDE_CXX_FLAGS"             \
     "$MAYBE_USE_STATIC_DEPS"                \
-    "$MAYBE_LIB_FUZZING_ENGINE"             \
-    "$TRADING_DIR"
+    "$MAYBE_LIB_FUZZING_ENGINE"
   echo -e "${COLOR_GREEN}Finish CMAKE configuration ${COLOR_OFF}"
   
-  #make -j "$JOBS" $MAYBE_VERBOSE
-  $CMAKE -DCMAKE_MAKE_PROGRAM=$NINJA -G Ninja -S . -B "$TRADING_BUILD_DIR"
   $CMAKE --build "$TRADING_BUILD_DIR" --target clean -j "$JOBS"
   $CMAKE --build "$TRADING_BUILD_DIR" --target all -j "$JOBS"
 
@@ -597,7 +597,7 @@ JOBS=10
 WITH_QUIC=false
 INSTALL_DEPENDENCIES=false
 FETCH_DEPENDENCIES=true
-PREFIX=$BASE_DIR/installed
+PREFIX=${PREFIX:-$BASE_DIR/installed}
 DEPS_DIR=$BASE_DIR/third-party
 HEADER_ONLY_SRC_DIR="$DEPS_DIR"
 HEADER_ONLY_DST_DIR="$PREFIX/include"

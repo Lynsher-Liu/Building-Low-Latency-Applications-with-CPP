@@ -71,15 +71,39 @@ set(CONFIG_INSTALL_DIR config CACHE STRING
     "The subdirectory where the configurations should be installed")
 
 set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE 1)
-# Try finding folly via its installed CMake configuration file.
-# This will also automatically find several libraries that we depend on through
-# folly.
-find_package(folly CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
+
+# -------------------- Optional / local third-party deps --------------------
+# Folly is only required for the websocket market-data path. In restricted environments
+# we build without it and compile only the non-websocket components.
+find_package(folly CONFIG QUIET)
+if (folly_FOUND)
+  add_compile_definitions(HFT_ENABLE_WEBSOCKET=1)
+else()
+  add_compile_definitions(HFT_ENABLE_WEBSOCKET=0)
+endif()
+
+# fmt: use header-only mode from the vendored headers to avoid needing an installed fmt package.
+add_library(fmt_header_only INTERFACE)
+add_library(fmt::fmt ALIAS fmt_header_only)
+target_compile_definitions(fmt_header_only INTERFACE FMT_HEADER_ONLY=1)
+target_include_directories(fmt_header_only INTERFACE ${CMAKE_SOURCE_DIR}/third-party/fmt/include)
+
 find_package(OpenSSL REQUIRED)
 #find_package(Glog REQUIRED)
 find_package(gflags CONFIG QUIET)
-find_package(log4cplus CONFIG REQUIRED)
+# log4cplus: prefer a CMake package if present, otherwise fall back to pkg-config.
+find_package(log4cplus CONFIG QUIET)
+if (NOT log4cplus_FOUND)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(LOG4CPLUS REQUIRED log4cplus)
+  find_library(LOG4CPLUS_LIB log4cplus HINTS ${LOG4CPLUS_LIBRARY_DIRS})
+  if (NOT LOG4CPLUS_LIB)
+    message(FATAL_ERROR "log4cplus library not found")
+  endif()
+  add_library(log4cplus::log4cplus UNKNOWN IMPORTED)
+  set_target_properties(log4cplus::log4cplus PROPERTIES IMPORTED_LOCATION "${LOG4CPLUS_LIB}")
+  target_include_directories(log4cplus::log4cplus INTERFACE ${LOG4CPLUS_INCLUDE_DIRS})
+endif()
 #find_library(LOG4CPLUS_LIB NAMES log4cplus PATHS "${CMAKE_PREFIX_PATH}/lib" REQUIRED)
 if (gflags_FOUND)
   message(STATUS "Found gflags from package config")
@@ -112,6 +136,7 @@ find_package(Boost REQUIRED COMPONENTS iostreams system context)
 include_directories(
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>
+  ${CMAKE_SOURCE_DIR}/third-party
   ${LIBGFLAGS_INCLUDE_DIR}
   #${GLOG_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIR}

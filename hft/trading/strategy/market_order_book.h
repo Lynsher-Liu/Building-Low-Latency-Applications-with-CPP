@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2026-05-12 10:27:26
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-05-13 18:12:45
+ * @LastEditTime: 2026-05-14 17:13:24
  * @FilePath: /my_HFT/hft/trading/strategy/market_order_book.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -18,14 +18,18 @@
 #include "common/timer.h"
 #include "market_order.h"
 #include "exchange/market_data/market_update.h"
-#include "feature_engine.h"
 
 namespace Trading 
 {
 // -------------------- 交易所 + 币对 特性萃取 --------------------
 // 根据交易所和币对，提供编译期常量（如深度、最小变动价位）
 template<ExchangeName E, SymbolName S>
-struct OrderBookTraits;
+struct OrderBookTraits
+{
+	static constexpr size_t depth = 10;          // 默认深度
+	static constexpr double tick_size = 0.01;    // 默认 tick size
+	static constexpr const char* name = "Default";
+};
 
 // OKX BTCUSDT 特性
 template<>
@@ -240,7 +244,5 @@ public:
 
 	OrderBook &operator=(const OrderBook &) = default;
 };
-
-class TradeEngine;
 
 }

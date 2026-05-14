@@ -1,0 +1,5 @@
+/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed_user/bin/trading_main
+/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed_user/config/config.json
+/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed_user/config/trading.log.properties
+/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed_user/config/.env
+/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/installed_user/trading/liblibtrading.a

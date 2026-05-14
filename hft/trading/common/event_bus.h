@@ -133,7 +133,7 @@ private:
     moodycamel::ConcurrentQueue<Event> m_queue;
 };
 
-int EventSubscriber::id_counter = 0;
+inline int EventSubscriber::id_counter = 0;
 
 
 

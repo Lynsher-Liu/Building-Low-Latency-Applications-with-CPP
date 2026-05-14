@@ -2,15 +2,18 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-03-27 18:25:38
+ * @LastEditTime: 2026-05-14 17:24:07
  * @FilePath: /my_HFT/hft/trading/strategy/feature_engine.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #pragma once
 
+#include <limits>
+
 #include "common/macros.h"
 #include "common/event_bus.h"
 #include "common/AsnLog.h"
+#include "market_order_book.h"
 
 using namespace Common;
 
@@ -18,8 +21,7 @@ static AsnLoggerPtr loggerfeatureEngine_H = ASN_GETLOGGER("featureEngine_h");
 
 namespace Trading 
 {
-  /// Sentinel value to represent invalid / uninitialized feature value.
-//constexpr auto Feature_INVALID = std::numeric_limits<double>::quiet_NaN();
+constexpr auto Feature_INVALID = std::numeric_limits<double>::quiet_NaN();
 
 struct FeatureSet {
 	double mid_price = Price_INVALID;      // 中间价
@@ -84,7 +86,7 @@ public:
 
 
 	/// Process a trade event and in this case compute the feature to capture aggressive trade quantity ratio against the BBO quantity.
-	auto onTradeUpdate(const Exchange::MEMarketUpdate *market_update, MarketOrderBook* book) noexcept -> void {
+	auto onTradeUpdate(const Exchange::MEMarketUpdate *market_update, Trading::OrderBook* book) noexcept -> void {
 		const auto bbo = book->getBBO();
 		if(LIKELY(bbo->bid_price_ != Price_INVALID && bbo->ask_price_ != Price_INVALID)) {
 		agg_trade_qty_ratio_ = static_cast<double>(market_update->qty_) / (market_update->side_ == Side::BUY ? bbo->ask_qty_ : bbo->bid_qty_);

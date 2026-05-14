@@ -101,7 +101,7 @@ public:
     RiskManager &operator=(const RiskManager &&) = delete;
   
 protected:
-    void handleEvent(const Event& event) override 
+    void handleEvent(const Event& event) //override 
 	{
         std::visit([this](const auto& e) {
             using T = std::decay_t<decltype(e)>;

@@ -206,6 +206,10 @@ public:
 	static constexpr std::array<SymbolName, kNumSymbols> kSymbols{Symbols...};
 	static constexpr size_t npos = static_cast<size_t>(-1);
 
+private:
+	std::array<PositionInfo, kNumSymbols> positions_{};
+
+public:
 	PositionKeeper() noexcept
 	{
 		for (size_t i = 0; i < positions_.size(); ++i) {
@@ -229,6 +233,9 @@ public:
 		return npos;
 	}
 
+	/**
+	 * run-time visit
+	 */
 	inline auto find(SymbolName symbol) noexcept -> PositionInfo*
 	{
 		const auto idx = symbolIndex(symbol);
@@ -241,6 +248,9 @@ public:
 		return (idx == npos) ? nullptr : &(positions_[idx]);
 	}
 
+	/**
+	 * compile-time visit
+	 */
 	template<SymbolName S>
 	inline auto info() noexcept -> PositionInfo&
 	{
@@ -296,9 +306,6 @@ public:
 		ss << "Total PnL:" << total_pnl << " Vol:" << total_vol << "\n";
 		return ss.str();
 	}
-
-private:
-	std::array<PositionInfo, kNumSymbols> positions_{};
 };
 
 

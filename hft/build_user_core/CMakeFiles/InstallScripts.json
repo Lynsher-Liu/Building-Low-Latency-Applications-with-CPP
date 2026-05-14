@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/build_user_core/cmake_install.cmake",
+		"/home/ubuntu/xinyi_workspace/optimization/HFT/my_HFT/hft/build_user_core/trading/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -11,66 +11,66 @@
 
 namespace Common 
 {
-	// 订单方向
-	enum class Side : int8_t {
-		INVALID = 0,
-		BUY = 1,
-		SELL = -1,
-		MAX = 2
-	};
+// 订单方向
+enum class Side : int8_t {
+	INVALID = 0,
+	BUY = 1,
+	SELL = -1,
+	MAX = 2
+};
 
-	inline std::string sideToString(Side side) 
-	{
-		switch (side) {
-			case Side::BUY:
-				return "BUY";
-			case Side::SELL:
-				return "SELL";
-			case Side::INVALID:
-				return "INVALID";
-			case Side::MAX:
-				return "MAX";
-			}
+inline std::string sideToString(Side side) 
+{
+	switch (side) {
+		case Side::BUY:
+			return "BUY";
+		case Side::SELL:
+			return "SELL";
+		case Side::INVALID:
+			return "INVALID";
+		case Side::MAX:
+			return "MAX";
+		}
 
-		return "UNKNOWN";
-	}
+	return "UNKNOWN";
+}
 
-	/// Convert Side to an index which can be used to index into a std::array.
-	inline constexpr auto sideToIndex(Side side) noexcept {
-		return static_cast<size_t>(side) + 1;
-	}
+/// Convert Side to an index which can be used to index into a std::array.
+inline constexpr auto sideToIndex(Side side) noexcept {
+	return static_cast<size_t>(side) + 1;
+}
 
-	/// Convert Side::BUY=1 and Side::SELL=-1.
-	inline constexpr auto sideToValue(Side side) noexcept {
-		return static_cast<int>(side);
-	}
-	/// Constants used across the ecosystem to represent upper bounds on various containers.
+/// Convert Side::BUY=1 and Side::SELL=-1.
+inline constexpr auto sideToValue(Side side) noexcept {
+	return static_cast<int>(side);
+}
+/// Constants used across the ecosystem to represent upper bounds on various containers.
 
-	/// Define max lengths
-	constexpr size_t MAX_TRADE_ID_LEN = 16;	
+/// Define max lengths
+constexpr size_t MAX_TRADE_ID_LEN = 16;	
 
-	/// Trading instruments / TickerIds from [0, ME_MAX_TICKERS].
-	constexpr size_t ME_MAX_TICKERS = 8;
+/// Trading instruments / TickerIds from [0, ME_MAX_TICKERS].
+constexpr size_t ME_MAX_TICKERS = 8;
 
-	/// Maximum size of lock free queues used to transfer client requests, client responses and market updates between components.
-	constexpr size_t ME_MAX_CLIENT_UPDATES = 256 * 1024;
-	constexpr size_t ME_MAX_MARKET_UPDATES = 256 * 1024;
+/// Maximum size of lock free queues used to transfer client requests, client responses and market updates between components.
+constexpr size_t ME_MAX_CLIENT_UPDATES = 256 * 1024;
+constexpr size_t ME_MAX_MARKET_UPDATES = 256 * 1024;
 
-	/// Maximum trading clients.
-	constexpr size_t ME_MAX_NUM_CLIENTS = 256;
+/// Maximum trading clients.
+constexpr size_t ME_MAX_NUM_CLIENTS = 256;
 
-	/// Maximum number of orders per trading client.
-	constexpr size_t ME_MAX_ORDER_IDS = 1024 * 1024;
+/// Maximum number of orders per trading client.
+constexpr size_t ME_MAX_ORDER_IDS = 1024 * 1024;
 
-	/// Maximum price level depth in the order books.
-	constexpr size_t ME_MAX_PRICE_LEVELS = 256;
+/// Maximum price level depth in the order books.
+constexpr size_t ME_MAX_PRICE_LEVELS = 256;
 
-	enum class ExchangeName : uint8_t {
-		OKX = 0,
-		BINANCE = 1,
-		BYBIT = 2,
-		DERIBIT = 3
-	};
+enum class ExchangeName : uint8_t {
+	OKX = 0,
+	BINANCE = 1,
+	BYBIT = 2,
+	DERIBIT = 3
+};
 
 inline std::string exchangeToString(ExchangeName exchange) 
 {
@@ -314,7 +314,7 @@ struct PriceLevel
     }
 };
 
-int PriceLevel::id = 0;
+inline int PriceLevel::id = 0;
 
 // 成交记录
 struct Trade 
@@ -372,5 +372,5 @@ struct Trade
     }
 };
 
-int Trade::id = 0;
+inline int Trade::id = 0;
 }

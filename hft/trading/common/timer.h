@@ -40,17 +40,17 @@ constexpr Nanos MILLIS_TO_SECS = 1000;
 constexpr Nanos NANOS_TO_MILLIS = NANOS_TO_MICROS * MICROS_TO_MILLIS;
 constexpr Nanos NANOS_TO_SECS = NANOS_TO_MILLIS * MILLIS_TO_SECS;
 
-TimeStamp getCurSecondTime() noexcept
+inline TimeStamp getCurSecondTime() noexcept
 {
     return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-TimeStamp getCurMicroTime() noexcept
+inline TimeStamp getCurMicroTime() noexcept
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-TimeStamp getCurNanoTime() noexcept
+inline TimeStamp getCurNanoTime() noexcept
 {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
