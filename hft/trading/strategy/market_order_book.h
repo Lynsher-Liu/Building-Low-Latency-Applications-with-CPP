@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2026-05-12 10:27:26
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-05-14 17:13:24
+ * @LastEditTime: 2026-05-15 16:29:48
  * @FilePath: /my_HFT/hft/trading/strategy/market_order_book.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -50,7 +50,8 @@ struct OrderBookTraits<ExchangeName::OKX, SymbolName::BTC_USDT_SWAP> {
 
 // -------------------- OrderBook 模板类 --------------------
 template<ExchangeName E, SymbolName S>
-class OrderBook {
+class OrderBook 
+{
 	using Traits = OrderBookTraits<E, S>;
 	// 静态数组存储深度（编译期确定大小）
 	std::array<Common::PriceLevel, Traits::depth> bids_{};

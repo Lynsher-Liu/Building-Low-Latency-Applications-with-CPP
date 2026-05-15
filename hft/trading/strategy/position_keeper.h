@@ -23,6 +23,16 @@ struct PositionSnapshot
 };
 
 // PositionInfo tracks the position, pnl (realized and unrealized) and volume for a single trading instrument.
+/**
+ *  PositionInfo 是否需要做成模板类？
+	不需要。 原因：
+		1.  所有成员类型都与 exchange 无关 — position_(int32_t)、real_pnl_/unreal_pnl_/total_pnl_(double)、
+			open_vwap_(array<double,3>)、volume_(Qty)、bbo_(const BBO*) 都是通用类型
+		2.  addFill 的参数 Exchange::MEClientResponse* 也是固定类型，不随 exchange 变化。
+		3.  做成模板只会增加编译时间和代码膨胀，不会带来任何性能收益 — 
+				PositionInfo 的热路径（addFill、updatePnlByBBO、writeSnapshot/readSnapshot seqlock）
+				不包含任何可以通过模板消除的运行时分支
+ */
 class PositionInfo 
 {
 public:
@@ -308,7 +318,7 @@ public:
 	}
 };
 
-
+#if 0
 /// Top level position keeper class to compute position, pnl and volume for all trading instruments.
 /// Legacy ticker-id keyed keeper used by the original TradeEngine / RiskManager path.
 class PositionKeeperTickerId 
@@ -364,4 +374,5 @@ private:
 		return ss.str();
 	}
 };
+#endif
 }
