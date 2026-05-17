@@ -21,6 +21,7 @@
 
 #include "market_order_book.h"
 #include "position_keeper.h"
+#include "feature_engine.h"
 #include "../common/types.h"
 #include "../common/event_bus.h"
 #include "../common/mem_pool.h"
@@ -74,6 +75,7 @@ private:
     // Each OrderBook<E, S> gets its own instantiation with compile-time constants (depth, tick_size) from OrderBookTraits<E, S>
     OrderBooksTuple orderbooks_{};
     PositionKeeper<E, Symbols...> position_keeper_{}; // tracks all symbols for this exchange
+    FeatureEngine feature_engine_{}; // single-writer feature snapshots for this exchange processor
 
     const int& bindToNumaNode;
     affinity::PmrMemoryNumaAllocator numa_allocator; // NUMA-aware allocator for memory pools, allocating for shared_ptrs
@@ -121,7 +123,7 @@ public:
         out_symbol = kSymbols[ticker_id];
         return true;
     }
-
+#if 0
     void getOrderbook(SymbolName symbol) 
     {
         withOrderBook(symbol, [&](auto &book) {
@@ -131,6 +133,7 @@ public:
             ASN_INFO(loggerH, "Best Bid: " + std::to_string(best_bid) + ", Best Ask: " + std::to_string(best_ask));
         });
     }
+#endif
 
     auto start() -> void
     {
@@ -172,7 +175,8 @@ public:
                 //auto buffer = struct_pack::serialize<std::string>(*(pl.get())); TODO: check using it
                 ASN_INFO(loggerH, "Processing PriceLevel: " + pl->toString()); 
 
-                processOrderBook(pl->symbol, [&](auto &book) {
+                processOrderBook(pl->symbol, [&](auto &book) 
+                {
                     // update orderbook and BBO inside
                     book.onPricelevelUpdate(pl);
 
@@ -187,6 +191,7 @@ public:
 
                     // update pnl using top-of-book snapshot
                     position_keeper_.updatePnlByBBO(pl->symbol, book.getBBO());
+                    feature_engine_.updateFromBBO(E, pl->symbol, *book.getBBO(), pl->last_update_time);
                 });
 
                 bus_.publish(Event(pl)); // publish to event bus
@@ -201,6 +206,8 @@ public:
                 processOrderBook(trade->symbol, [&](auto &book) {
                     book.onMarketUpdate(trade);
                     position_keeper_.updatePnlByBBO(trade->symbol, book.getBBO());
+                    feature_engine_.updateFromBBO(E, trade->symbol, *book.getBBO(), trade->timestamp);
+                    feature_engine_.updateFromTrade(*trade);
                 });
 
                 
