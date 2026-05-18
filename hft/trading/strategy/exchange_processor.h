@@ -190,7 +190,7 @@ public:
                     */
 
                     // update pnl using top-of-book snapshot
-                    position_keeper_.updatePnlByBBO(pl->symbol, book.getBBO());
+                    position_keeper_.updateFromBBO(pl->symbol, book.getBBO());
                     feature_engine_.updateFromBBO(E, pl->symbol, *book.getBBO(), pl->last_update_time);
                 });
 
@@ -205,7 +205,7 @@ public:
 
                 processOrderBook(trade->symbol, [&](auto &book) {
                     book.onMarketUpdate(trade);
-                    position_keeper_.updatePnlByBBO(trade->symbol, book.getBBO());
+                    position_keeper_.updateFromBBO(trade->symbol, book.getBBO());
                     feature_engine_.updateFromBBO(E, trade->symbol, *book.getBBO(), trade->timestamp);
                     feature_engine_.updateFromTrade(*trade);
                 });

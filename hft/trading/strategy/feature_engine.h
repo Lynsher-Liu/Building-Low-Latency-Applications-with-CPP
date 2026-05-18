@@ -2,7 +2,7 @@
  * @Author: Lynsher xinyiliu@astri.org
  * @Date: 2025-12-01 13:52:35
  * @LastEditors: Lynsher xinyiliu@astri.org
- * @LastEditTime: 2026-05-18 00:00:00
+ * @LastEditTime: 2026-05-19 00:00:00
  * @FilePath: /my_HFT/hft/trading/strategy/feature_engine.h
  * @Description: Single-writer, multi-reader feature snapshots for the trading hot path.
  */
@@ -13,7 +13,6 @@
 #include <cmath>
 #include <deque>
 #include <limits>
-#include <utility>
 
 #include "common/macros.h"
 #include "common/types.h"
@@ -34,10 +33,10 @@ struct FeatureSnapshot
 	SymbolName symbol = SymbolName::BTC_USDT;
 
 	double mid_price = Feature_INVALID;
-	double micro_price = Feature_INVALID;
+	double market_price = Feature_INVALID;
 	double spread = Feature_INVALID;
 
-	double vwap_1s = Feature_INVALID;
+	double open_vwap_1s = Feature_INVALID;
 	double order_flow_imbalance_1s = 0.0;
 	double agg_trade_qty_ratio_1s = 0.0;
 	double large_trade_signal = 0.0;
@@ -47,6 +46,40 @@ struct FeatureSnapshot
 
 class FeatureInfo
 {
+private:
+	struct TradeWindowEntry
+	{
+		timer::TimeStamp ts = 0;
+		double signed_qty = 0.0;
+		double abs_qty = 0.0;
+		double price_qty = 0.0;
+	};
+
+	ExchangeName exchange_ = ExchangeName::OKX;
+	SymbolName symbol_ = SymbolName::BTC_USDT;
+
+	double mid_price_ = Feature_INVALID;
+	double market_price_ = Feature_INVALID;
+	double spread_ = Feature_INVALID;
+	double open_vwap_1s_ = Feature_INVALID;
+	double order_flow_imbalance_1s_ = 0.0;
+	double agg_trade_qty_ratio_1s_ = 0.0;
+	double large_trade_signal_ = 0.0;
+	timer::TimeStamp ts_ = 0;
+
+	std::deque<TradeWindowEntry> trade_window_;
+	double rolling_buy_qty_ = 0.0;
+	double rolling_sell_qty_ = 0.0;
+	double rolling_ofi_ = 0.0;
+	double rolling_price_qty_ = 0.0;
+	double rolling_volume_ = 0.0;
+
+	mutable std::atomic<uint64_t> seq_{0};
+	FeatureSnapshot snapshot_{};
+
+	static constexpr timer::TimeStamp WINDOW_NS = timer::NANOS_TO_SECS;
+	static constexpr double LARGE_TRADE_THRESHOLD = 10.0;
+
 public:
 	FeatureInfo() = default;
 
@@ -54,6 +87,7 @@ public:
 	{
 		exchange_ = exchange;
 		symbol_ = symbol;
+		writeSnapshot();
 	}
 
 	auto updateFromBBO(const BBO& bbo, timer::TimeStamp ts) noexcept -> void
@@ -69,72 +103,55 @@ public:
 		const auto bid_qty = static_cast<double>(bbo.bid_qty_);
 		const auto ask_qty = static_cast<double>(bbo.ask_qty_);
 
-		beginPublish();
-		mid_price_.store((bid_price + ask_price) * 0.5, std::memory_order_relaxed);
-		micro_price_.store((bid_price * ask_qty + ask_price * bid_qty) / (bid_qty + ask_qty),
-						   std::memory_order_relaxed);
-		spread_.store(ask_price - bid_price, std::memory_order_relaxed);
-		ts_.store(ts, std::memory_order_relaxed);
-		endPublish();
+		mid_price_ = (bid_price + ask_price) * 0.5;
+		market_price_ = (bid_price * ask_qty + ask_price * bid_qty) / (bid_qty + ask_qty);
+		spread_ = ask_price - bid_price;
+		ts_ = ts;
+
+		writeSnapshot();
 	}
 
 	auto updateFromTrade(const Trade& trade) noexcept -> void
 	{
 		const auto now = trade.timestamp ? trade.timestamp : timer::getCurNanoTime();
 		const auto signed_qty = (trade.side == Side::BUY) ? trade.quantity : -trade.quantity;
+		const TradeWindowEntry entry{now, signed_qty, trade.quantity, trade.price * trade.quantity};
 
-		trade_qty_window_.push_back({now, signed_qty});
-		trade_pv_window_.push_back({now, trade.price * trade.quantity});
-		trade_volume_window_.push_back({now, trade.quantity});
+		trade_window_.push_back(entry);
+		addEntry(entry);
 
-		while (!trade_qty_window_.empty() && now - trade_qty_window_.front().first > WINDOW_NS) {
-			trade_qty_window_.pop_front();
-		}
-		while (!trade_pv_window_.empty() && now - trade_pv_window_.front().first > WINDOW_NS) {
-			trade_pv_window_.pop_front();
-		}
-		while (!trade_volume_window_.empty() && now - trade_volume_window_.front().first > WINDOW_NS) {
-			trade_volume_window_.pop_front();
+		while (!trade_window_.empty() && now - trade_window_.front().ts > WINDOW_NS) {
+			removeEntry(trade_window_.front());
+			trade_window_.pop_front();
 		}
 
-		double buy_qty = 0.0;
-		double sell_qty = 0.0;
-		double ofi = 0.0;
-		for (const auto& [ts, qty] : trade_qty_window_) {
-			(void)ts;
-			ofi += qty;
-			if (qty > 0.0) {
-				buy_qty += qty;
-			} else {
-				sell_qty -= qty;
-			}
-		}
+		open_vwap_1s_ = rolling_volume_ > 0.0 ? rolling_price_qty_ / rolling_volume_ : Feature_INVALID;
+		order_flow_imbalance_1s_ = rolling_ofi_;
+		agg_trade_qty_ratio_1s_ = rolling_buy_qty_ / (rolling_sell_qty_ + 1e-9);
+		large_trade_signal_ = std::abs(trade.quantity) >= LARGE_TRADE_THRESHOLD
+								? (signed_qty > 0.0 ? 1.0 : -1.0)
+								: 0.0;
+		ts_ = now;
 
-		double pv = 0.0;
-		for (const auto& [ts, value] : trade_pv_window_) {
-			(void)ts;
-			pv += value;
-		}
+		writeSnapshot();
+	}
 
-		double volume = 0.0;
-		for (const auto& [ts, qty] : trade_volume_window_) {
-			(void)ts;
-			volume += qty;
-		}
+	void writeSnapshot() noexcept
+	{
+		seq_.fetch_add(1, std::memory_order_acq_rel); // odd = writer active
 
-		const auto vwap = volume > 0.0 ? pv / volume : Feature_INVALID;
-		const auto ratio = buy_qty / (sell_qty + 1e-9);
-		const auto large_signal = std::abs(trade.quantity) >= LARGE_TRADE_THRESHOLD
-									? (signed_qty > 0.0 ? 1.0 : -1.0)
-									: 0.0;
+		snapshot_.exchange = exchange_;
+		snapshot_.symbol = symbol_;
+		snapshot_.mid_price = mid_price_;
+		snapshot_.market_price = market_price_;
+		snapshot_.spread = spread_;
+		snapshot_.open_vwap_1s = open_vwap_1s_;
+		snapshot_.order_flow_imbalance_1s = order_flow_imbalance_1s_;
+		snapshot_.agg_trade_qty_ratio_1s = agg_trade_qty_ratio_1s_;
+		snapshot_.large_trade_signal = large_trade_signal_;
+		snapshot_.ts = ts_;
 
-		beginPublish();
-		vwap_1s_.store(vwap, std::memory_order_relaxed);
-		order_flow_imbalance_1s_.store(ofi, std::memory_order_relaxed);
-		agg_trade_qty_ratio_1s_.store(ratio, std::memory_order_relaxed);
-		large_trade_signal_.store(large_signal, std::memory_order_relaxed);
-		ts_.store(now, std::memory_order_relaxed);
-		endPublish();
+		seq_.fetch_add(1, std::memory_order_release); // even = stable
 	}
 
 	auto readSnapshot() const noexcept -> FeatureSnapshot
@@ -147,16 +164,7 @@ public:
 				continue;
 			}
 
-			out.exchange = exchange_;
-			out.symbol = symbol_;
-			out.mid_price = mid_price_.load(std::memory_order_relaxed);
-			out.micro_price = micro_price_.load(std::memory_order_relaxed);
-			out.spread = spread_.load(std::memory_order_relaxed);
-			out.vwap_1s = vwap_1s_.load(std::memory_order_relaxed);
-			out.order_flow_imbalance_1s = order_flow_imbalance_1s_.load(std::memory_order_relaxed);
-			out.agg_trade_qty_ratio_1s = agg_trade_qty_ratio_1s_.load(std::memory_order_relaxed);
-			out.large_trade_signal = large_trade_signal_.load(std::memory_order_relaxed);
-			out.ts = ts_.load(std::memory_order_relaxed);
+			out = snapshot_;
 
 			const auto after = seq_.load(std::memory_order_acquire);
 			if (LIKELY(before == after && !(after & 1U))) {
@@ -167,44 +175,45 @@ public:
 
 	auto getMidPrice() const noexcept -> double
 	{
-		return mid_price_.load(std::memory_order_acquire);
+		return readSnapshot().mid_price;
+	}
+
+	auto getMarketPrice() const noexcept -> double
+	{
+		return readSnapshot().market_price;
 	}
 
 	auto getAggTradeQtyRatio() const noexcept -> double
 	{
-		return agg_trade_qty_ratio_1s_.load(std::memory_order_acquire);
+		return readSnapshot().agg_trade_qty_ratio_1s;
 	}
 
 private:
-	static constexpr timer::TimeStamp WINDOW_NS = timer::NANOS_TO_SECS;
-	static constexpr double LARGE_TRADE_THRESHOLD = 10.0;
-
-	auto beginPublish() noexcept -> void
+	auto addEntry(const TradeWindowEntry& entry) noexcept -> void
 	{
-		seq_.fetch_add(1, std::memory_order_acq_rel);
+		rolling_ofi_ += entry.signed_qty;
+		rolling_volume_ += entry.abs_qty;
+		rolling_price_qty_ += entry.price_qty;
+
+		if (entry.signed_qty > 0.0) {
+			rolling_buy_qty_ += entry.signed_qty;
+		} else {
+			rolling_sell_qty_ -= entry.signed_qty;
+		}
 	}
 
-	auto endPublish() noexcept -> void
+	auto removeEntry(const TradeWindowEntry& entry) noexcept -> void
 	{
-		seq_.fetch_add(1, std::memory_order_release);
+		rolling_ofi_ -= entry.signed_qty;
+		rolling_volume_ -= entry.abs_qty;
+		rolling_price_qty_ -= entry.price_qty;
+
+		if (entry.signed_qty > 0.0) {
+			rolling_buy_qty_ -= entry.signed_qty;
+		} else {
+			rolling_sell_qty_ += entry.signed_qty;
+		}
 	}
-
-	ExchangeName exchange_ = ExchangeName::OKX;
-	SymbolName symbol_ = SymbolName::BTC_USDT;
-
-	std::atomic<uint64_t> seq_{0};
-	std::atomic<double> mid_price_{Feature_INVALID};
-	std::atomic<double> micro_price_{Feature_INVALID};
-	std::atomic<double> spread_{Feature_INVALID};
-	std::atomic<double> vwap_1s_{Feature_INVALID};
-	std::atomic<double> order_flow_imbalance_1s_{0.0};
-	std::atomic<double> agg_trade_qty_ratio_1s_{0.0};
-	std::atomic<double> large_trade_signal_{0.0};
-	std::atomic<timer::TimeStamp> ts_{0};
-
-	std::deque<std::pair<timer::TimeStamp, double>> trade_qty_window_;
-	std::deque<std::pair<timer::TimeStamp, double>> trade_pv_window_;
-	std::deque<std::pair<timer::TimeStamp, double>> trade_volume_window_;
 };
 
 class FeatureEngine

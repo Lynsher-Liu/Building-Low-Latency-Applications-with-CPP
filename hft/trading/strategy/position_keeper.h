@@ -130,7 +130,7 @@ public:
 	 *  Process a change from BBO
 	 *  calculate mid_price and unrealized pnl
 	 * */ 
-	auto updatePnlByBBO(const BBO *bbo) noexcept 
+	auto updateFromBBO(const BBO *bbo) noexcept 
 	{ 
 		std::string time_str;
 		bbo_ = bbo;
@@ -285,13 +285,13 @@ public:
 		pos->writeSnapshot();
 	}
 
-	inline auto updatePnlByBBO(SymbolName symbol, const BBO *bbo) noexcept -> void
+	inline auto updateFromBBO(SymbolName symbol, const BBO *bbo) noexcept -> void
 	{
 		auto *pos = find(symbol);
 		if (UNLIKELY(!pos)) {
 			return;
 		}
-		pos->updatePnlByBBO(bbo);
+		pos->updateFromBBO(bbo);
 		pos->writeSnapshot();
 	}
 
@@ -345,9 +345,9 @@ private:
 		ticker_position_.at(client_response->ticker_id_).writeSnapshot();
 	}
 
-	void updatePnlByBBO(SymbolName symbol, const BBO *bbo) noexcept 
+	void updateFromBBO(SymbolName symbol, const BBO *bbo) noexcept 
 	{
-		ticker_position_.at(symbol).updatePnlByBBO(bbo);     // mark position using that same snapshot
+		ticker_position_.at(symbol).updateFromBBO(bbo);     // mark position using that same snapshot
 		ticker_position_.at(symbol).writeSnapshot();    // optional seqlock publication
 	}
 
