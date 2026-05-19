@@ -151,6 +151,8 @@ inline std::string symbolToString(SymbolName symbol)
 		return std::to_string(price);
 	}
 
+	constexpr auto Feature_INVALID = std::numeric_limits<double>::quiet_NaN();
+
 	typedef uint32_t Qty;
 	constexpr auto Qty_INVALID = std::numeric_limits<Qty>::max();
 

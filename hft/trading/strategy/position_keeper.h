@@ -35,7 +35,7 @@ struct PositionSnapshot
  */
 class PositionInfo 
 {
-public:
+private:
 	ExchangeName exchange;
 	SymbolName symbol;
 
@@ -45,7 +45,6 @@ public:
 	Qty volume_ = 0; //the total quantity that has been executed
 	const BBO *bbo_ = nullptr;
 
-private:
 	// variables for generating position snapshot and read
 	mutable std::atomic<uint64_t> seq_{0};
 	PositionSnapshot snapshot_{};
@@ -130,7 +129,7 @@ public:
 	 *  Process a change from BBO
 	 *  calculate mid_price and unrealized pnl
 	 * */ 
-	auto updateFromBBO(const BBO *bbo) noexcept 
+	auto updateFromBBO(const BBO* bbo) noexcept 
 	{ 
 		std::string time_str;
 		bbo_ = bbo;
@@ -157,6 +156,24 @@ public:
 		}
 	}
 
+	PositionSnapshot readSnapshot() const noexcept 
+	{
+		PositionSnapshot out;
+
+		for (;;) {
+			const auto before = seq_.load(std::memory_order_acquire);
+			if (before & 1) continue;
+
+			out = snapshot_;
+
+			const auto after = seq_.load(std::memory_order_acquire);
+			if (before == after && !(after & 1)) {
+				return out;
+			}
+		}
+	}
+
+private:
 	/**
 	 * Use a seqlock-style published snapshot for readers, this version assumes single writer.
 	 * 
@@ -183,23 +200,6 @@ public:
 		}
 
 		seq_.fetch_add(1, std::memory_order_release); // even = stable
-	}
-
-	PositionSnapshot readSnapshot() const noexcept 
-	{
-		PositionSnapshot out;
-
-		for (;;) {
-			const auto before = seq_.load(std::memory_order_acquire);
-			if (before & 1) continue;
-
-			out = snapshot_;
-
-			const auto after = seq_.load(std::memory_order_acquire);
-			if (before == after && !(after & 1)) {
-				return out;
-			}
-		}
 	}
 };
 
@@ -285,7 +285,7 @@ public:
 		pos->writeSnapshot();
 	}
 
-	inline auto updateFromBBO(SymbolName symbol, const BBO *bbo) noexcept -> void
+	inline auto updateFromBBO(SymbolName symbol, const BBO* bbo) noexcept -> void
 	{
 		auto *pos = find(symbol);
 		if (UNLIKELY(!pos)) {
@@ -295,9 +295,9 @@ public:
 		pos->writeSnapshot();
 	}
 
-	inline auto getPositionInfo(SymbolName symbol) const noexcept -> const PositionInfo*
+	inline auto getPositionInfoSnapshot(SymbolName symbol) const noexcept -> const PositionSnapshot
 	{
-		return find(symbol);
+		return find(symbol)->readSnapshot();
 	}
 
 	inline auto toString() const -> std::string

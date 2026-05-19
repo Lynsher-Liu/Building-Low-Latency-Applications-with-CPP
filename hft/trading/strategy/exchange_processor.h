@@ -191,7 +191,7 @@ public:
 
                     // update pnl using top-of-book snapshot
                     position_keeper_.updateFromBBO(pl->symbol, book.getBBO());
-                    feature_engine_.updateFromBBO(E, pl->symbol, *book.getBBO(), pl->last_update_time);
+                    feature_engine_.updateFromBBO(pl->symbol, book.getBBO(), pl->last_update_time);
                 });
 
                 bus_.publish(Event(pl)); // publish to event bus
@@ -203,10 +203,9 @@ public:
                 // 处理交易更新逻辑，例如记录成交信息等
                 ASN_INFO(loggerH, "Processing Trade: " + trade->toString());
 
-                processOrderBook(trade->symbol, [&](auto &book) {
+                processOrderBook(trade->symbol, [&](auto &book) 
+                {
                     book.onMarketUpdate(trade);
-                    position_keeper_.updateFromBBO(trade->symbol, book.getBBO());
-                    feature_engine_.updateFromBBO(E, trade->symbol, *book.getBBO(), trade->timestamp);
                     feature_engine_.updateFromTrade(*trade);
                 });
 
