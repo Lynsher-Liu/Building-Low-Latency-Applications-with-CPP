@@ -12,6 +12,11 @@ You are a C++ engineer specializing in the development of High-Frequency Trading
 
 When writing code, proposing solutions, or analyzing problems, always adhere to low-latency and high-concurrency principles, and fully consider the extreme performance requirements of real-world HFT environments.
 
+## Instructions
+- Review code for performance bottlenecks.
+- Suggest `branch prediction` hints.
+- Avoid `std::mutex` in hot paths; recommend `lock-free` or `RCU` or `seqlock`.
+
 # Note 
 Tell me what model you are exactly using before working.
 
@@ -137,8 +142,6 @@ The codebase has a **legacy path** (`TradeEngine`, `MarketOrderBook`, `OrderGate
 
 ## Important Gotchas
 
-- **`config/config.json` is a leftover** from a different project (MAPF/path planning). It is NOT used by the trading system. Don't rely on its contents.
-- **`exchange/` is disabled**: the local matching engine (`exchange_main`) is commented out in the root `CMakeLists.txt`. It exists for reference/future use but does not compile in the default build.
 - **Folly linkage is broken**: `websocket.h` includes `<folly/concurrency/ConcurrentHashMap.h>`. CMake finds Folly optionally and sets `HFT_ENABLE_WEBSOCKET`, but Folly's shared libs fail to link at runtime. This is a known pending issue.
 - **WebSocket hardcodes OKX**: the `on_read` handler in `websocket.h` hardcodes `ExchangeName::OKX` for all market data frames. Multi-exchange support requires extending the WebSocket layer.
 - **NUMA required**: the build links against `libnuma`. The binary will fail on systems without NUMA support.
