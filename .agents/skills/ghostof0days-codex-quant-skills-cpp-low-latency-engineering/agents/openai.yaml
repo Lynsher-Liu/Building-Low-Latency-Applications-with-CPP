@@ -1,0 +1,4 @@
+interface:
+  display_name: "C++ Low Latency Engineering"
+  short_description: "memory ownership discipline and low-level performance determinism"
+  default_prompt: "build c++ low latency engineering workflows for memory ownership discipline and low-level performance determinism with concrete diagnostics, limits, and rollout controls."
