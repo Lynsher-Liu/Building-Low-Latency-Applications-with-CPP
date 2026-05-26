@@ -218,6 +218,25 @@ public:
             //std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
+    /**
+     * Consider 每次新的 Book5Event 或 TradeEvent 到来，更新对应 feature，然后输出:
+     * struct MarketSnapshot {
+            Venue venue;
+            BookState book;
+            FeatureSnapshot feature;
+        };
+
+        跨所 Aggregator 再生成:
+        struct CrossVenueSnapshot {
+            MarketSnapshot okx;
+            MarketSnapshot binance;
+
+            double okx_bid_vs_binance_ask_bps;
+            double binance_bid_vs_okx_ask_bps;
+            double mid_diff_bps;
+        };
+        这些都是纯数据结构，生成后直接发到 EventBus，供后续跨交易所策略/风控/日志/监控等使用
+     */
 
 private:
     /**

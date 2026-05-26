@@ -44,7 +44,10 @@ public:
 	// update from trades in rolling window
 	timer::TimeStamp window_size = WINDOW_NS;
 	double window_vwap = Feature_INVALID;
-	double order_flow_imbalance = 0.0;
+	//double order_flow_imbalance = 0.0;
+	double order_flow_imbalance_ratio = 0.0; 
+	double window_volume_ = 0.0;
+	uint64_t window_trade_count_ = 0;
 
 	// update from last aggressive trade
 	double agg_trade_qty_ratio = 0.0;
@@ -79,7 +82,15 @@ private:
 	 * 它不是 mid price，也不是 best bid/ask，而是真实成交价的量加权平均
 	 */
 	double window_vwap_ = Feature_INVALID; 
+	double window_volume_ = 0.0;
+	uint64_t window_trade_count_ = 0;
+
+	/**
+	 * ofi = buy_qty - sell_qty in window, it reflects the net buying/selling pressure
+	 * ofi_ratio = (buy_qty - sell_qty) / (buy_qty + sell_qty);
+	 */
 	double order_flow_imbalance_ = 0.0;
+	double order_flow_imbalance_ratio_ = 0.0;
 	double agg_trade_qty_ratio_ = 0.0;
 	double large_trade_signal_ = 0.0;
 	timer::TimeStamp ts_ = 0;
@@ -104,16 +115,6 @@ public:
 		snapshot_.exchange = exchange_;
 		snapshot_.symbol = symbol_;
 	}
-	// FeatureInfo(ExchangeName ex = ExchangeName::OKX, SymbolName sy = SymbolName::BTC_USDT) 
-	// 	: exchange_(ex), 
-	// 		symbol_(sy) {}
-
-	// auto configure(ExchangeName exchange, SymbolName symbol) noexcept -> void
-	// {
-	// 	exchange_ = exchange;
-	// 	symbol_ = symbol;
-	// 	writeSnapshot();
-	// }
 
 	auto updateFromBBO(const BBO* bbo, timer::TimeStamp ts) noexcept -> void
 	{
@@ -155,6 +156,9 @@ public:
 		// update window features
 		window_vwap_ = rolling_volume_ > 0.0 ? rolling_total_ / rolling_volume_ : Feature_INVALID;
 		order_flow_imbalance_ = rolling_ofi_;
+		order_flow_imbalance_ratio_ = rolling_volume_ > 0.0 ? rolling_ofi_ / rolling_volume_ : 0.0;
+		window_volume_ = rolling_volume_;
+		window_trade_count_ = static_cast<uint64_t>(trade_window_.size());
 		
 		// formular: aggr_trade_qty_ratio = last_aggressive_trade_qty / top_of_book_qty
 		if (bbo_) 
@@ -223,7 +227,11 @@ private:
 		snapshot_.market_price = market_price_;
 		snapshot_.spread = spread_;
 		snapshot_.window_vwap = window_vwap_;
-		snapshot_.order_flow_imbalance = order_flow_imbalance_;
+		//snapshot_.order_flow_imbalance = order_flow_imbalance_;
+		snapshot_.window_volume_ = window_volume_;
+		snapshot_.window_trade_count_ = window_trade_count_;
+		snapshot_.order_flow_imbalance_ratio = order_flow_imbalance_ratio_;
+
 		snapshot_.agg_trade_qty_ratio = agg_trade_qty_ratio_;
 		snapshot_.large_trade_signal = large_trade_signal_;
 		snapshot_.ts = ts_;
