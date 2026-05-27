@@ -1,0 +1,4 @@
+interface:
+  display_name: "Risk Measurement"
+  short_description: "VaR and ES calibration error by book and horizon."
+  default_prompt: "build risk measurement workflows with concrete diagnostics, controls, and deployment safeguards."

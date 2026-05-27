@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exchange Connectivity Protocols"
+  short_description: "exchange and connectivity workflows in production trading systems"
+  default_prompt: "build exchange connectivity protocols workflows for exchange and connectivity workflows in production trading systems with concrete diagnostics, limits, and rollout controls."

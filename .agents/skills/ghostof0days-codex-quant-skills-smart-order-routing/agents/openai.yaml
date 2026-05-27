@@ -1,0 +1,4 @@
+interface:
+  display_name: "Smart Order Routing"
+  short_description: "instruction design, sizing cadence, and adverse-selection control"
+  default_prompt: "build smart order routing workflows for instruction design, sizing cadence, and adverse-selection control with concrete diagnostics, limits, and rollout controls."

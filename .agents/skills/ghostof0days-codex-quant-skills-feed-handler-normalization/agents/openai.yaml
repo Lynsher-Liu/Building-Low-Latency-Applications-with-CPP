@@ -1,0 +1,4 @@
+interface:
+  display_name: "Feed Handler Normalization"
+  short_description: "feed and handler workflows in production trading systems"
+  default_prompt: "build feed handler normalization workflows for feed and handler workflows in production trading systems with concrete diagnostics, limits, and rollout controls."

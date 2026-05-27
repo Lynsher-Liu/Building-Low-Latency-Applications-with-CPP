@@ -1,0 +1,4 @@
+interface:
+  display_name: "Networking Kernel Bypass"
+  short_description: "packet-path latency, multicast integrity, and loss recovery"
+  default_prompt: "build networking kernel bypass workflows for packet-path latency, multicast integrity, and loss recovery with concrete diagnostics, limits, and rollout controls."

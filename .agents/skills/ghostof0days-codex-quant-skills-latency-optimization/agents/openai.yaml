@@ -1,0 +1,4 @@
+interface:
+  display_name: "Latency Optimization"
+  short_description: "tail-latency compression and deterministic path behavior"
+  default_prompt: "build latency optimization workflows for tail-latency compression and deterministic path behavior with concrete diagnostics, limits, and rollout controls."

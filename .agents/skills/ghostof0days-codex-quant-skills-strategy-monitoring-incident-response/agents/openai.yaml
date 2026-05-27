@@ -1,0 +1,4 @@
+interface:
+  display_name: "Strategy Monitoring Incident Response"
+  short_description: "strategy and monitoring workflows in production trading systems"
+  default_prompt: "build strategy monitoring incident response workflows for strategy and monitoring workflows in production trading systems with concrete diagnostics, limits, and rollout controls."

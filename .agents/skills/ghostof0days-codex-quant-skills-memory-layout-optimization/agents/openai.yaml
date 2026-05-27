@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memory Layout Optimization"
+  short_description: "constraint feasibility and solver robustness"
+  default_prompt: "build memory layout optimization workflows for constraint feasibility and solver robustness with concrete diagnostics, limits, and rollout controls."

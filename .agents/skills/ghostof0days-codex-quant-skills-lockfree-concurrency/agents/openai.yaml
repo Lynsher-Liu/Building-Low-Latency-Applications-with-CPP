@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lockfree Concurrency"
+  short_description: "lockfree and concurrency workflows in production trading systems"
+  default_prompt: "build lockfree concurrency workflows for lockfree and concurrency workflows in production trading systems with concrete diagnostics, limits, and rollout controls."

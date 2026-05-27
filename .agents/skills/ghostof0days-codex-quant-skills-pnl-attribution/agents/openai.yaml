@@ -1,0 +1,4 @@
+interface:
+  display_name: "P&L Attribution"
+  short_description: "pnl and attribution workflows in production trading systems"
+  default_prompt: "build p&l attribution workflows for pnl and attribution workflows in production trading systems with concrete diagnostics, limits, and rollout controls."

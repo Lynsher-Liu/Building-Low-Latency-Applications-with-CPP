@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reinforcement Learning Trading"
+  short_description: "policy learning stability, reward shaping, and deployment safeguards"
+  default_prompt: "build reinforcement learning trading workflows for policy learning stability, reward shaping, and deployment safeguards with concrete diagnostics, limits, and rollout controls."

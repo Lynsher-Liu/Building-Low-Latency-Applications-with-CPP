@@ -1,0 +1,4 @@
+interface:
+  display_name: "Performance Profiling"
+  short_description: "performance and profiling workflows in production trading systems"
+  default_prompt: "build performance profiling workflows for performance and profiling workflows in production trading systems with concrete diagnostics, limits, and rollout controls."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Risk Management"
+  short_description: "limit breach frequency, duration, and severity trends."
+  default_prompt: "build risk management workflows with concrete diagnostics, controls, and deployment safeguards."

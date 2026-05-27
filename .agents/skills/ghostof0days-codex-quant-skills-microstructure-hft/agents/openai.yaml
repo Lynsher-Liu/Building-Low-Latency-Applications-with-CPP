@@ -1,0 +1,4 @@
+interface:
+  display_name: "Microstructure HFT"
+  short_description: "queue dynamics, spread resilience, and impact decomposition"
+  default_prompt: "build microstructure hft workflows for queue dynamics, spread resilience, and impact decomposition with concrete diagnostics, limits, and rollout controls."
